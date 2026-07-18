@@ -1,0 +1,20 @@
+{
+  "name": "Estoque — Gestão de Vendas",
+  "short_name": "Estoque",
+  "description": "Sistema de gestão de vendas para loja de roupas: PDV, produtos, clientes e fiado.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f6fa",
+  "theme_color": "#4338ca",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

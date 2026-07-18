@@ -1,0 +1,2015 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Estoque — Gestão de Vendas</title>
+<meta name="theme-color" content="#9B2D6F" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
+<style>
+  :root {
+    /* ---------- Nova paleta ---------- */
+    --rosa: #9B2D6F;
+    --rosa-light: #C4527A;
+    --rosa-bg: #FDF0F5;
+    --cinza-bg: #F4F4F6;
+    --border: #E5E7EB;
+    --text: #18181B;
+    --text2: #71717A;
+
+    /* Aliases para os nomes de variavel usados no restante do app (evita
+       reescrever centenas de "style=" inline: so trocamos o valor aqui). */
+    --cor-fundo: var(--cinza-bg);
+    --cor-card: #ffffff;
+    --cor-borda: var(--border);
+    --cor-texto: var(--text);
+    --cor-texto-suave: var(--text2);
+    --cor-primaria: var(--rosa);
+    --cor-primaria-hover: #7d2459;
+    --cor-sucesso: #16a34a;
+    --cor-perigo: #dc2626;
+    --cor-aviso: #d97706;
+    --raio: 12px;
+    --sombra: 0 1px 3px rgba(20, 20, 40, 0.06), 0 1px 2px rgba(20, 20, 40, 0.05);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--cor-fundo);
+    color: var(--cor-texto);
+  }
+
+  button { font-family: inherit; cursor: pointer; }
+  input, select, button, textarea { font-family: inherit; font-size: 14px; }
+  h1, h2, h3 { margin: 0 0 4px; }
+  .escondido { display: none !important; }
+
+  /* ---------- Tela de login ---------- */
+  #tela-login { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--rosa-bg); }
+  .card-login { background: var(--cor-card); border: 1px solid var(--cor-borda); border-radius: var(--raio); box-shadow: var(--sombra); padding: 32px; width: 340px; }
+  .card-login h1 { font-size: 22px; margin-bottom: 2px; }
+  .card-login h1 span { color: var(--rosa); }
+  .card-login p { color: var(--cor-texto-suave); font-size: 13px; margin: 0 0 20px; }
+
+  .campo { margin-bottom: 14px; }
+  .campo label { display: block; font-size: 12px; font-weight: 600; color: var(--cor-texto-suave); margin-bottom: 4px; }
+  .campo input, .campo select {
+    width: 100%; padding: 9px 10px; border: 1px solid var(--cor-borda); border-radius: 8px; background: #fff; color: var(--cor-texto);
+  }
+  .campo input:focus, .campo select:focus { outline: 2px solid var(--cor-primaria); outline-offset: 0; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 9px 16px; border-radius: 8px; border: 1px solid transparent;
+    background: var(--rosa); color: #fff; font-weight: 600; transition: background .15s ease;
+  }
+  .btn:hover { background: var(--cor-primaria-hover); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.btn-secundario { background: #fff; color: var(--cor-texto); border-color: var(--cor-borda); }
+  .btn.btn-secundario:hover { background: #f7f7f8; }
+  .btn.btn-perigo { background: var(--cor-perigo); }
+  .btn.btn-perigo:hover { background: #b91c1c; }
+  .btn.btn-full { width: 100%; }
+  .btn.btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  .erro-msg { color: var(--cor-perigo); font-size: 13px; margin-top: 8px; min-height: 16px; }
+  .ok-msg { color: var(--cor-sucesso); font-size: 13px; margin-top: 8px; min-height: 16px; }
+
+  /* ---------- App shell ---------- */
+  #app { display: none; min-height: 100vh; flex-direction: column; }
+  #app.ativo { display: flex; }
+
+  /* Topbar (desktop) */
+  #topbar {
+    display: none; align-items: center; justify-content: space-between;
+    padding: 0 24px; height: 64px; background: #fff; border-bottom: 1px solid var(--cor-borda);
+    position: sticky; top: 0; z-index: 30;
+  }
+  #topbar .logo { font-size: 20px; font-weight: 800; color: var(--text); letter-spacing: -.02em; }
+  #topbar .logo span { color: var(--rosa); }
+  #topbar-nav { display: flex; gap: 4px; }
+  #topbar-nav .nav-link {
+    padding: 9px 14px; border-radius: 8px; border: none; background: none;
+    color: var(--text2); font-weight: 600; font-size: 13.5px;
+  }
+  #topbar-nav .nav-link:hover { background: var(--cinza-bg); color: var(--text); }
+  #topbar-nav .nav-link.ativo { background: var(--rosa-bg); color: var(--rosa); }
+  #btn-mais-desktop { padding: 9px 14px; border-radius: 8px; border: none; background: none; color: var(--text2); font-weight: 600; font-size: 13.5px; }
+  #btn-mais-desktop:hover { background: var(--cinza-bg); color: var(--text); }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%; background: var(--rosa); color: #fff;
+    border: none; font-weight: 700; font-size: 13px; flex-shrink: 0;
+  }
+
+  /* Bottom nav (mobile) */
+  #bottom-nav {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; height: 60px;
+    background: #fff; border-top: 1px solid var(--cor-borda); z-index: 50;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  #bottom-nav .nav-link {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 2px; border: none; background: none; color: var(--text2); font-size: 10.5px; font-weight: 600;
+  }
+  #bottom-nav .nav-link .icone-nav { font-size: 19px; line-height: 1; }
+  #bottom-nav .nav-link.ativo { color: var(--rosa); }
+
+  #conteudo { flex: 1; padding: 20px 16px 84px; overflow-x: hidden; }
+  @media (min-width: 900px) {
+    #topbar { display: flex; }
+    #bottom-nav { display: none; }
+    #conteudo { padding: 24px 32px; max-width: 1180px; margin: 0 auto; width: 100%; }
+  }
+
+  .topo-pagina { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+  .topo-pagina h2 { font-size: 19px; }
+  .topo-pagina p { color: var(--cor-texto-suave); font-size: 13px; margin: 0; }
+
+  .painel { background: var(--cor-card); border: 1px solid var(--cor-borda); border-radius: var(--raio); box-shadow: var(--sombra); padding: 16px; margin-bottom: 16px; }
+  .painel h3 { font-size: 14.5px; margin-bottom: 12px; }
+
+  .grade-2 { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 899px) { .grade-2 { grid-template-columns: 1fr; } }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 0.5px solid var(--cor-borda); }
+  th { color: var(--cor-texto-suave); font-weight: 600; font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; }
+  tr:last-child td { border-bottom: none; }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+  .tag.verde { background: #dcfce7; color: #15803d; }
+  .tag.vermelho { background: #fee2e2; color: #b91c1c; }
+  .tag.cinza { background: var(--cinza-bg); color: var(--text2); }
+  .tag.laranja { background: #fef3c7; color: #b45309; }
+
+  .linha-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+
+  /* ---------- PDV ---------- */
+  .pdv-header {
+    background: linear-gradient(135deg, var(--rosa), var(--rosa-light));
+    color: #fff; border-radius: var(--raio); padding: 18px 20px; margin-bottom: 16px;
+  }
+  .pdv-header h2 { font-size: 19px; color: #fff; }
+  .pdv-header p { color: rgba(255,255,255,.85); font-size: 13px; margin: 0; }
+
+  .busca-grande { position: relative; margin-bottom: 10px; }
+  .busca-grande input {
+    width: 100%; padding: 13px 44px; border: 1px solid var(--cor-borda); border-radius: 10px;
+    font-size: 15px; background: #fff;
+  }
+  .busca-grande input:focus { outline: 2px solid var(--rosa); outline-offset: 0; }
+  .busca-grande .icone-lupa, .busca-grande .icone-codigo {
+    position: absolute; top: 50%; transform: translateY(-50%); color: var(--text2);
+  }
+  .busca-grande .icone-lupa { left: 14px; }
+  .busca-grande .icone-codigo {
+    right: 8px; border: none; background: none; padding: 6px; border-radius: 8px; display: flex;
+  }
+  .busca-grande .icone-codigo:hover { background: var(--cinza-bg); }
+
+  .lista-produtos-pdv { max-height: 360px; overflow-y: auto; border: 1px solid var(--cor-borda); border-radius: var(--raio); }
+  .produto-pdv-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 11px 14px; border-bottom: 0.5px solid var(--cor-borda); }
+  .produto-pdv-item:last-child { border-bottom: none; }
+  .produto-pdv-item:hover { background: #fafafa; }
+  .produto-pdv-item.estoque-zerado { opacity: .5; }
+  .produto-pdv-item .produto-info { min-width: 0; }
+  .produto-pdv-item .produto-info b { display: block; font-size: 13.5px; }
+  .produto-pdv-item .produto-info span { font-size: 12px; color: var(--cor-texto-suave); }
+  .produto-pdv-item .produto-preco-acao { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .produto-pdv-item .produto-preco { font-weight: 700; font-size: 13.5px; white-space: nowrap; }
+  .btn-adicionar { background: var(--rosa-bg); color: var(--rosa); border: 1px solid var(--rosa-bg); font-weight: 700; }
+  .btn-adicionar:hover { background: var(--rosa); color: #fff; }
+
+  .carrinho-item { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 0.5px solid var(--cor-borda); font-size: 13px; }
+  .carrinho-item:last-child { border-bottom: none; }
+  .qtd-controles { display: flex; align-items: center; gap: 6px; }
+  .qtd-controles button { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--cor-borda); background: #fff; font-weight: 700; line-height: 1; padding: 0; }
+  .qtd-controles span { min-width: 22px; text-align: center; font-weight: 600; }
+
+  .resumo-linha { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13.5px; }
+  .resumo-linha.total { font-size: 17px; font-weight: 700; border-top: 1px solid var(--cor-borda); margin-top: 6px; padding-top: 10px; }
+
+  .pagamento-linha { display: grid; grid-template-columns: 1fr 110px; gap: 8px; margin-bottom: 8px; }
+  .badge-credito { font-size: 12px; color: var(--cor-texto-suave); }
+  .link-discreto {
+    background: none; border: none; padding: 2px 0; color: var(--text2); font-size: 12.5px;
+    font-weight: 600; text-decoration: underline; text-underline-offset: 2px;
+  }
+  .link-discreto:hover { color: var(--text); }
+
+  /* Painel de checkout (carrinho + cliente + desconto + resumo + pagamento) */
+  #painel-checkout { }
+  @media (max-width: 899px) {
+    #painel-checkout {
+      position: fixed; left: 0; right: 0; bottom: 60px; z-index: 40;
+      background: #fff; border-top-left-radius: 18px; border-top-right-radius: 18px;
+      box-shadow: 0 -6px 20px rgba(20,20,40,.10); max-height: 62vh; overflow-y: auto; padding: 14px 14px 18px;
+    }
+    #painel-checkout .painel { box-shadow: none; border: none; border-bottom: 1px solid var(--cor-borda); border-radius: 0; padding: 12px 2px; margin-bottom: 0; }
+    #painel-checkout .painel:last-child { border-bottom: none; }
+  }
+
+  .opcoes-data-pagamento { display: flex; gap: 8px; margin-bottom: 8px; }
+  .opcoes-data-pagamento button { flex: 1; padding: 7px; border-radius: 8px; border: 1px solid var(--cor-borda); background: #fff; font-size: 12.5px; font-weight: 600; color: var(--cor-texto-suave); }
+  .opcoes-data-pagamento button.ativo { background: var(--rosa); color: #fff; border-color: var(--rosa); }
+  .parcela-bloco { border: 1px solid var(--cor-borda); border-radius: 10px; padding: 10px; margin-bottom: 8px; }
+  .parcela-bloco .parcela-titulo { font-size: 12.5px; color: var(--cor-texto-suave); margin-bottom: 6px; font-weight: 600; }
+  .parcela-bloco input[type=date], .parcela-bloco select { width: 100%; padding: 7px 8px; border: 1px solid var(--cor-borda); border-radius: 6px; }
+  .parcela-data-calculada { font-size: 11.5px; color: var(--cor-texto-suave); margin-top: 4px; }
+
+  #overlay-modal { position: fixed; inset: 0; background: rgba(20,20,35,.45); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+  #overlay-modal.ativo { display: flex; }
+  .modal { background: #fff; border-radius: var(--raio); padding: 22px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; }
+  .modal-fechar { float: right; border: none; background: none; font-size: 18px; color: var(--cor-texto-suave); }
+  .nav-link-menu { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 10px 12px; border-radius: 8px; border: none; background: none; font-size: 14px; font-weight: 600; color: var(--text); }
+  .nav-link-menu:hover { background: var(--cinza-bg); }
+
+  /* ---------- Cupom 58mm / Comprovante (impressao) ---------- */
+  .imprimivel { font-family: "Courier New", monospace; font-size: 12px; width: 210px; margin: 0 auto; color: #000; }
+  .imprimivel hr { border: none; border-top: 1px dashed #000; margin: 6px 0; }
+  .imprimivel .linha { display: flex; justify-content: space-between; }
+  .imprimivel .centro { text-align: center; }
+  .imprimivel .titulo { font-weight: 700; font-size: 14px; }
+  .imprimivel .assinatura { margin-top: 26px; border-top: 1px solid #000; padding-top: 4px; text-align: center; }
+  @media print {
+    body * { visibility: hidden; }
+    .imprimivel, .imprimivel * { visibility: visible; }
+    .imprimivel { position: fixed; top: 0; left: 0; width: 58mm; }
+  }
+
+  /* ---------- Toggle (switch) ---------- */
+  .campo-toggle { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .campo-toggle label { font-size: 13px; font-weight: 600; color: var(--cor-texto); margin: 0; }
+  .switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .trilho { position: absolute; inset: 0; background: #d1d3dd; border-radius: 999px; transition: .15s; cursor: pointer; }
+  .switch .trilho::before { content: ""; position: absolute; height: 16px; width: 16px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .15s; }
+  .switch input:checked + .trilho { background: var(--rosa); }
+  .switch input:checked + .trilho::before { transform: translateX(18px); }
+
+  /* ---------- Recebimentos ---------- */
+  .resultado-busca-cliente { border: 1px solid var(--cor-borda); border-radius: 6px; margin-bottom: 4px; cursor: pointer; }
+  .painel-recebimento-cliente { display: flex; flex-wrap: wrap; gap: 18px; }
+  .painel-recebimento-cliente .bloco { flex: 1; min-width: 220px; }
+
+  /* ---------- Dashboard / Detalhe do cliente (cards + timeline) ---------- */
+  .cards-resumo { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .card-resumo { background: var(--cor-card); border: 1px solid var(--cor-borda); border-radius: var(--raio); box-shadow: var(--sombra); padding: 14px 16px; }
+  .card-resumo span { display: block; font-size: 12px; color: var(--cor-texto-suave); margin-bottom: 4px; }
+  .card-resumo b { font-size: 19px; }
+  .card-resumo.destaque { background: var(--rosa-bg); border-color: var(--rosa-bg); }
+  .card-resumo.destaque b { color: var(--rosa); }
+
+  .filtros-timeline { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .filtros-timeline button { padding: 7px 14px; border-radius: 999px; border: 1px solid var(--cor-borda); background: #fff; font-size: 12.5px; font-weight: 600; color: var(--cor-texto-suave); }
+  .filtros-timeline button.ativo { background: var(--rosa); color: #fff; border-color: var(--rosa); }
+
+  .timeline-item { display: flex; gap: 12px; align-items: center; padding: 12px 10px; border-bottom: 0.5px solid var(--cor-borda); cursor: pointer; }
+  .timeline-item:last-child { border-bottom: none; }
+  .timeline-item:hover { background: #fafafa; }
+  .timeline-item .icone { font-size: 20px; width: 30px; text-align: center; flex-shrink: 0; }
+  .timeline-item .conteudo { flex: 1; min-width: 0; }
+  .timeline-item .conteudo b { display: block; font-size: 13.5px; }
+  .timeline-item .conteudo span { font-size: 12px; color: var(--cor-texto-suave); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+  .timeline-item .valor { font-weight: 700; font-size: 13.5px; white-space: nowrap; }
+
+  .toast { position: fixed; bottom: 76px; right: 18px; background: var(--text); color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 13px; box-shadow: var(--sombra); z-index: 200; opacity: 0; transform: translateY(8px); transition: all .2s ease; pointer-events: none; }
+  .toast.mostrar { opacity: 1; transform: translateY(0); }
+  .toast.erro { background: #7f1d1d; }
+  @media (min-width: 900px) { .toast { bottom: 18px; } }
+</style>
+</head>
+<body>
+
+<!-- ===================== TELA DE LOGIN ===================== -->
+<div id="tela-login">
+  <div class="card-login">
+    <h1>esto<span>que</span></h1>
+    <p>Gestão de vendas para loja de roupas</p>
+    <form id="form-login">
+      <div class="campo">
+        <label>Email</label>
+        <input type="email" id="login-email" required autocomplete="username" />
+      </div>
+      <div class="campo">
+        <label>Senha</label>
+        <input type="password" id="login-senha" required autocomplete="current-password" />
+      </div>
+      <button class="btn btn-full" type="submit">Entrar</button>
+      <div class="erro-msg" id="login-erro"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ===================== APP PRINCIPAL ===================== -->
+<div id="app">
+
+  <!-- Topbar desktop -->
+  <header id="topbar">
+    <div class="logo">esto<span>que</span></div>
+    <nav id="topbar-nav">
+      <button class="nav-link" data-view="pdv">Vender</button>
+      <button class="nav-link" data-view="dashboard">Dashboard</button>
+      <button class="nav-link" data-view="fiado">Fiado</button>
+      <button class="nav-link" data-view="clientes">Clientes</button>
+      <button id="btn-mais-desktop">Mais ▾</button>
+    </nav>
+    <button class="avatar" id="avatar-desktop">--</button>
+  </header>
+
+  <main id="conteudo">
+
+    <!-- ---------- VIEW: PDV ---------- -->
+    <section id="view-pdv" class="view">
+      <div class="pdv-header">
+        <h2>PDV</h2>
+        <p>Monte o carrinho e finalize a venda</p>
+      </div>
+
+      <div class="grade-2">
+        <div>
+          <div class="painel">
+            <div class="busca-grande">
+              <span class="icone-lupa">🔍</span>
+              <input type="text" id="pdv-busca-produto" placeholder="Buscar por nome ou código..." />
+              <button type="button" class="icone-codigo" id="pdv-btn-codigo-barras" title="Buscar por código de barras">▥</button>
+            </div>
+            <select id="pdv-filtro-categoria" style="width:100%;padding:9px 10px;border:1px solid var(--cor-borda);border-radius:8px;margin-bottom:10px;">
+              <option value="">Todas as categorias</option>
+            </select>
+            <div class="lista-produtos-pdv" id="pdv-lista-produtos"></div>
+          </div>
+        </div>
+
+        <div id="painel-checkout">
+          <div class="painel">
+            <h3>Carrinho</h3>
+            <div id="pdv-carrinho"><p style="color:var(--cor-texto-suave);font-size:13px;">Nenhum item no carrinho.</p></div>
+          </div>
+
+          <div class="painel">
+            <h3>Cliente (opcional)</h3>
+            <input type="text" id="pdv-busca-cliente" placeholder="Buscar cliente por nome/telefone..." style="width:100%;padding:9px 10px;border:1px solid var(--cor-borda);border-radius:8px;" />
+            <div id="pdv-resultado-cliente" style="margin-top:6px;font-size:13px;"></div>
+            <div id="pdv-cliente-selecionado" class="escondido" style="margin-top:8px;padding:8px 10px;background:var(--rosa-bg);border-radius:8px;font-size:13px;"></div>
+          </div>
+
+          <div class="painel">
+            <h3>Desconto</h3>
+            <div class="linha-form">
+              <select id="pdv-desconto-tipo">
+                <option value="nenhum">Sem desconto</option>
+                <option value="valor">Valor em R$</option>
+                <option value="percentual">Percentual (%)</option>
+              </select>
+              <input type="number" id="pdv-desconto-valor" placeholder="0,00" min="0" step="0.01" value="0" />
+            </div>
+          </div>
+
+          <div class="painel">
+            <h3>Resumo</h3>
+            <div class="resumo-linha"><span>Subtotal</span><span id="pdv-subtotal">R$ 0,00</span></div>
+            <div class="resumo-linha"><span>Desconto</span><span id="pdv-desconto-exibido">R$ 0,00</span></div>
+            <div class="resumo-linha total"><span>Total</span><span id="pdv-total">R$ 0,00</span></div>
+          </div>
+
+          <div class="painel">
+            <h3>Pagamento</h3>
+            <div id="pdv-pagamentos"></div>
+            <button class="link-discreto" id="pdv-add-pagamento" type="button">+ adicionar 2ª forma</button>
+            <div class="badge-credito" id="pdv-info-credito"></div>
+
+            <div id="pdv-bloco-data-fiado" class="escondido" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--cor-borda);">
+              <label style="display:block;font-size:12px;font-weight:600;color:var(--cor-texto-suave);margin-bottom:6px;">Em quantas vezes o cliente vai pagar o fiado?</label>
+              <select id="pdv-numero-parcelas" style="width:100%;padding:9px 10px;border:1px solid var(--cor-borda);border-radius:8px;margin-bottom:10px;">
+                <option value="1">1x</option>
+                <option value="2">2x</option>
+                <option value="3">3x</option>
+                <option value="4">4x</option>
+                <option value="6">6x</option>
+                <option value="12">12x</option>
+              </select>
+              <div id="pdv-lista-parcelas"></div>
+            </div>
+
+            <div class="erro-msg" id="pdv-erro"></div>
+            <button class="btn btn-full" id="pdv-finalizar" style="margin-top:12px;">Finalizar venda</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- VIEW: DASHBOARD ---------- -->
+    <section id="view-dashboard" class="view escondido">
+      <div class="topo-pagina">
+        <div><h2>Dashboard</h2><p>Panorama rápido da loja hoje.</p></div>
+      </div>
+      <div class="cards-resumo">
+        <div class="card-resumo destaque"><span>Vendas hoje</span><b id="dash-vendas-hoje">0</b></div>
+        <div class="card-resumo"><span>Faturado hoje</span><b id="dash-total-hoje">R$ 0,00</b></div>
+        <div class="card-resumo"><span>A receber (fiado)</span><b id="dash-a-receber">R$ 0,00</b></div>
+        <div class="card-resumo"><span>Clientes com fiado</span><b id="dash-clientes-fiado">0</b></div>
+        <div class="card-resumo"><span>Produtos com estoque baixo</span><b id="dash-estoque-baixo">0</b></div>
+      </div>
+      <div class="painel">
+        <h3>Últimas vendas</h3>
+        <table>
+          <thead><tr><th>#</th><th>Data</th><th>Cliente</th><th>Total</th><th>Status</th></tr></thead>
+          <tbody id="dash-ultimas-vendas"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ---------- VIEW: FIADO ---------- -->
+    <section id="view-fiado" class="view escondido">
+      <div class="topo-pagina">
+        <div><h2>Fiado</h2><p>Clientes com saldo devedor em aberto.</p></div>
+      </div>
+      <div class="painel">
+        <table>
+          <thead><tr><th>Cliente</th><th>Telefone</th><th>Limite</th><th>Saldo devedor</th><th></th></tr></thead>
+          <tbody id="tabela-fiado"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ---------- VIEW: PRODUTOS ---------- -->
+    <section id="view-produtos" class="view escondido">
+      <div class="topo-pagina">
+        <div><h2>Produtos</h2><p>Cadastro de peças, preço fixo ou aberto e controle de estoque.</p></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secundario" id="btn-gerenciar-categorias">🏷️ Categorias</button>
+          <button class="btn" id="btn-novo-produto">+ Novo produto</button>
+        </div>
+      </div>
+      <div class="painel">
+        <input type="text" id="produtos-busca" placeholder="Buscar por nome ou código de barras..." style="width:100%;max-width:320px;padding:9px 10px;border:1px solid var(--cor-borda);border-radius:8px;margin-bottom:14px;" />
+        <table>
+          <thead><tr><th>Nome</th><th>Categoria</th><th>Preço</th><th>Estoque</th><th></th></tr></thead>
+          <tbody id="tabela-produtos"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ---------- VIEW: CLIENTES ---------- -->
+    <section id="view-clientes" class="view escondido">
+      <div class="topo-pagina">
+        <div><h2>Clientes</h2><p>Cadastro, limite de crédito e controle de fiado.</p></div>
+        <button class="btn" id="btn-novo-cliente">+ Novo cliente</button>
+      </div>
+      <div class="painel">
+        <input type="text" id="clientes-busca" placeholder="Buscar por nome, telefone ou email..." style="width:100%;max-width:320px;padding:9px 10px;border:1px solid var(--cor-borda);border-radius:8px;margin-bottom:14px;" />
+        <table>
+          <thead><tr><th>Nome</th><th>Telefone</th><th>Limite</th><th>Saldo devedor</th><th></th></tr></thead>
+          <tbody id="tabela-clientes"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ---------- VIEW: DETALHE DO CLIENTE ---------- -->
+    <section id="view-cliente-detalhe" class="view escondido">
+      <div class="topo-pagina">
+        <div>
+          <button class="btn btn-secundario btn-sm" id="cd-voltar" style="margin-bottom:8px;">← Voltar para Clientes</button>
+          <h2 id="cd-nome">—</h2>
+          <p id="cd-telefone"></p>
+        </div>
+      </div>
+      <div class="cards-resumo">
+        <div class="card-resumo"><span>Total comprado</span><b id="cd-total-comprado">R$ 0,00</b></div>
+        <div class="card-resumo"><span>Total pago</span><b id="cd-total-pago">R$ 0,00</b></div>
+        <div class="card-resumo destaque"><span>Saldo devedor</span><b id="cd-saldo-devedor">R$ 0,00</b></div>
+        <div class="card-resumo"><span>Próxima parcela</span><b id="cd-proxima-parcela">—</b></div>
+      </div>
+      <div class="painel">
+        <div class="filtros-timeline">
+          <button class="ativo" data-filtro="tudo">Tudo</button>
+          <button data-filtro="compras">Só compras</button>
+          <button data-filtro="pagamentos">Só pagamentos</button>
+          <button data-filtro="aberto">Em aberto</button>
+        </div>
+        <div id="cd-timeline"></div>
+      </div>
+    </section>
+
+    <!-- ---------- VIEW: RECEBIMENTOS ---------- -->
+    <section id="view-recebimentos" class="view escondido">
+      <div class="topo-pagina">
+        <div><h2>Recebimentos</h2><p>Baixa rápida de pagamento do fiado, com comprovante e aviso automático via WhatsApp.</p></div>
+      </div>
+      <div class="painel">
+        <h3>Buscar cliente</h3>
+        <input type="text" id="receb-busca-cliente" placeholder="Nome ou telefone..." style="width:100%;max-width:360px;padding:9px 10px;border:1px solid var(--cor-borda);border-radius:8px;" />
+        <div id="receb-resultado-busca" style="margin-top:8px;"></div>
+      </div>
+      <div class="painel escondido" id="receb-painel-cliente">
+        <h3 id="receb-nome-cliente">—</h3>
+        <div class="painel-recebimento-cliente">
+          <div class="bloco">
+            <div class="resumo-linha"><span>Saldo devedor</span><span id="receb-saldo-devedor">R$ 0,00</span></div>
+            <div class="resumo-linha"><span>Limite de crédito</span><span id="receb-limite-credito">R$ 0,00</span></div>
+            <h3 style="font-size:13px;margin-top:14px;">Compras no fiado</h3>
+            <table>
+              <thead><tr><th>Venda</th><th>Data</th><th>Valor fiado</th></tr></thead>
+              <tbody id="receb-tabela-vendas-fiado"></tbody>
+            </table>
+          </div>
+          <div class="bloco">
+            <form id="form-recebimento">
+              <div class="campo">
+                <label>Valor recebido</label>
+                <input type="number" step="0.01" min="0.01" id="receb-valor" required />
+              </div>
+              <div class="campo">
+                <label>Forma de pagamento</label>
+                <select id="receb-forma">
+                  <option value="dinheiro">Dinheiro</option>
+                  <option value="pix">PIX</option>
+                  <option value="cartao_credito">Crédito</option>
+                  <option value="cartao_debito">Débito</option>
+                </select>
+              </div>
+              <div class="erro-msg" id="receb-erro"></div>
+              <button class="btn btn-full" type="submit">Confirmar recebimento</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- VIEW: VENDAS ---------- -->
+    <section id="view-vendas" class="view escondido">
+      <div class="topo-pagina">
+        <div><h2>Vendas</h2><p>Histórico de vendas, reimpressão de cupom e cancelamento.</p></div>
+      </div>
+      <div class="painel">
+        <table>
+          <thead><tr><th>#</th><th>Data</th><th>Cliente</th><th>Vendedor</th><th>Total</th><th>Status</th><th></th></tr></thead>
+          <tbody id="tabela-vendas"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ---------- VIEW: USUÁRIOS (admin) ---------- -->
+    <section id="view-usuarios" class="view escondido">
+      <div class="topo-pagina">
+        <div><h2>Usuários</h2><p>Cadastro de administradores e vendedores.</p></div>
+        <button class="btn" id="btn-novo-usuario">+ Novo usuário</button>
+      </div>
+      <div class="painel">
+        <table>
+          <thead><tr><th>Nome</th><th>Email</th><th>Papel</th></tr></thead>
+          <tbody id="tabela-usuarios"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom nav mobile -->
+  <nav id="bottom-nav">
+    <button class="nav-link" data-view="pdv"><span class="icone-nav">🧾</span>PDV</button>
+    <button class="nav-link" data-view="dashboard"><span class="icone-nav">📊</span>Dashboard</button>
+    <button class="nav-link" data-view="fiado"><span class="icone-nav">📅</span>Fiado</button>
+    <button class="nav-link" data-view="clientes"><span class="icone-nav">👤</span>Clientes</button>
+    <button id="btn-mais-mobile"><span class="icone-nav">☰</span>Mais</button>
+  </nav>
+</div>
+
+<!-- ===================== MODAL GENÉRICO ===================== -->
+<div id="overlay-modal">
+  <div class="modal" id="modal-conteudo"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  // URL base da API: usa o backend local durante o desenvolvimento e o
+  // backend publicado no Render em producao (GitHub Pages serve o frontend
+  // num dominio diferente do backend, entao a URL nao pode ser relativa).
+  const API_URL = window.location.hostname === 'localhost'
+    ? 'http://localhost:3000'
+    : 'https://SEU_BACKEND.onrender.com';
+
+  // ==========================================================================
+  // Estado global e utilidades de API
+  // ==========================================================================
+  const estado = {
+    token: localStorage.getItem('estoque_token') || null,
+    usuario: JSON.parse(localStorage.getItem('estoque_usuario') || 'null'),
+    produtos: [],
+    clientes: [],
+    categorias: [],
+    carrinho: [],
+    clienteSelecionado: null,
+    pagamentos: [{ forma: 'dinheiro', valor: 0 }],
+    parcelasFiado: [],
+    clienteRecebimento: null,
+    clienteDetalhe: null,
+    filtroTimeline: 'tudo',
+  };
+
+  async function api(caminho, opcoes = {}) {
+    const cabecalhos = { 'Content-Type': 'application/json' };
+    if (estado.token) cabecalhos.Authorization = `Bearer ${estado.token}`;
+    const resposta = await fetch(`${API_URL}/api${caminho}`, {
+      ...opcoes,
+      headers: { ...cabecalhos, ...(opcoes.headers || {}) },
+      body: opcoes.body ? JSON.stringify(opcoes.body) : undefined,
+    });
+    const dados = await resposta.json().catch(() => ({}));
+    if (!resposta.ok) throw new Error(dados.erro || 'Erro inesperado ao comunicar com o servidor.');
+    return dados;
+  }
+
+  function formatarMoeda(valor) {
+    return (Number(valor) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  function paraData(valor) {
+    if (!valor) return null;
+    if (valor instanceof Date) return Number.isNaN(valor.getTime()) ? null : valor;
+    let texto = String(valor).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
+      const [ano, mes, dia] = texto.split('-').map(Number);
+      return new Date(ano, mes - 1, dia);
+    }
+    if (texto.includes(' ') && !texto.includes('T')) texto = texto.replace(' ', 'T');
+    if (!/Z$|[+-]\d{2}:?\d{2}$/.test(texto)) texto += 'Z';
+    const data = new Date(texto);
+    return Number.isNaN(data.getTime()) ? null : data;
+  }
+
+  function formatarData(valor) {
+    const data = paraData(valor);
+    return data ? data.toLocaleDateString('pt-BR') : '—';
+  }
+
+  function formatarDataHora(valor) {
+    const data = paraData(valor);
+    return data ? data.toLocaleString('pt-BR') : '—';
+  }
+
+  function mostrarToast(mensagem, tipo = 'ok') {
+    const toast = document.getElementById('toast');
+    toast.textContent = mensagem;
+    toast.className = 'toast mostrar' + (tipo === 'erro' ? ' erro' : '');
+    setTimeout(() => toast.classList.remove('mostrar'), 3200);
+  }
+
+  function abrirModal(html) {
+    document.getElementById('modal-conteudo').innerHTML = html;
+    document.getElementById('overlay-modal').classList.add('ativo');
+  }
+  function fecharModal() {
+    document.getElementById('overlay-modal').classList.remove('ativo');
+    document.getElementById('modal-conteudo').innerHTML = '';
+  }
+  document.getElementById('overlay-modal').addEventListener('click', (ev) => {
+    if (ev.target.id === 'overlay-modal') fecharModal();
+  });
+
+  function obterIniciais(nome) {
+    const partes = String(nome || '').trim().split(/\s+/).filter(Boolean);
+    if (partes.length === 0) return '?';
+    if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+    return (partes[0][0] + partes[1][0]).toUpperCase();
+  }
+
+  // ==========================================================================
+  // Autenticação
+  // ==========================================================================
+  function salvarSessao(token, usuario) {
+    estado.token = token;
+    estado.usuario = usuario;
+    localStorage.setItem('estoque_token', token);
+    localStorage.setItem('estoque_usuario', JSON.stringify(usuario));
+  }
+
+  function encerrarSessao() {
+    estado.token = null;
+    estado.usuario = null;
+    localStorage.removeItem('estoque_token');
+    localStorage.removeItem('estoque_usuario');
+    document.getElementById('app').classList.remove('ativo');
+    document.getElementById('tela-login').style.display = 'flex';
+  }
+
+  document.getElementById('form-login').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const email = document.getElementById('login-email').value.trim();
+    const senha = document.getElementById('login-senha').value;
+    const erroEl = document.getElementById('login-erro');
+    erroEl.textContent = '';
+    try {
+      const dados = await api('/auth/login', { method: 'POST', body: { email, senha } });
+      salvarSessao(dados.token, dados.usuario);
+      iniciarApp();
+    } catch (erro) {
+      erroEl.textContent = erro.message;
+    }
+  });
+
+  // ==========================================================================
+  // Navegação entre views
+  // ==========================================================================
+  function mudarView(nome) {
+    document.querySelectorAll('.view').forEach((v) => v.classList.add('escondido'));
+    document.getElementById(`view-${nome}`).classList.remove('escondido');
+    document.querySelectorAll('.nav-link').forEach((b) => b.classList.remove('ativo'));
+    document.querySelectorAll(`.nav-link[data-view="${nome}"]`).forEach((b) => b.classList.add('ativo'));
+
+    if (nome === 'produtos') carregarProdutosView();
+    if (nome === 'clientes') carregarClientesView();
+    if (nome === 'recebimentos') iniciarRecebimentosView();
+    if (nome === 'vendas') carregarVendasView();
+    if (nome === 'usuarios') carregarUsuariosView();
+    if (nome === 'pdv') { carregarCategoriasPdv(); carregarListaProdutosPdv(); }
+    if (nome === 'dashboard') carregarDashboardView();
+    if (nome === 'fiado') carregarFiadoView();
+  }
+
+  document.querySelectorAll('.nav-link[data-view]').forEach((btn) => {
+    btn.addEventListener('click', () => mudarView(btn.dataset.view));
+  });
+
+  // --- menu "Mais" (Produtos, Recebimentos, Vendas, Categorias, Usuários, Sair) ---
+  function abrirMenuMais() {
+    const usuario = estado.usuario;
+    abrirModal(`
+      <button class="modal-fechar" onclick="document.getElementById('overlay-modal').classList.remove('ativo')">✕</button>
+      <h3>${usuario.nome}</h3>
+      <p style="color:var(--cor-texto-suave);font-size:13px;margin-top:-4px;">${usuario.role === 'admin' ? 'Administrador' : 'Vendedor(a)'}</p>
+      <div style="display:flex;flex-direction:column;gap:2px;margin-top:14px;">
+        <button class="nav-link-menu" data-ir="produtos">👕 Produtos</button>
+        <button class="nav-link-menu" data-ir="recebimentos">💰 Recebimentos</button>
+        <button class="nav-link-menu" data-ir="vendas">📑 Vendas</button>
+        <button class="nav-link-menu" data-ir="categorias">🏷️ Categorias</button>
+        ${usuario.role === 'admin' ? '<button class="nav-link-menu" data-ir="usuarios">🔑 Usuários</button>' : ''}
+      </div>
+      <hr style="margin:14px 0;border:none;border-top:1px solid var(--cor-borda);" />
+      <button class="btn btn-full btn-secundario" id="btn-sair-menu">Sair</button>
+    `);
+    document.querySelectorAll('[data-ir]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        fecharModal();
+        if (btn.dataset.ir === 'categorias') abrirGerenciarCategorias();
+        else mudarView(btn.dataset.ir);
+      });
+    });
+    document.getElementById('btn-sair-menu').addEventListener('click', () => {
+      fecharModal();
+      encerrarSessao();
+    });
+  }
+  document.getElementById('btn-mais-mobile').addEventListener('click', abrirMenuMais);
+  document.getElementById('btn-mais-desktop').addEventListener('click', abrirMenuMais);
+  document.getElementById('avatar-desktop').addEventListener('click', abrirMenuMais);
+
+  function iniciarApp() {
+    document.getElementById('tela-login').style.display = 'none';
+    document.getElementById('app').classList.add('ativo');
+    document.getElementById('avatar-desktop').textContent = obterIniciais(estado.usuario.nome);
+    mudarView('pdv');
+  }
+
+  // ==========================================================================
+  // Dashboard (agregado a partir dos endpoints existentes de vendas/clientes/produtos)
+  // ==========================================================================
+  async function carregarDashboardView() {
+    let vendas, clientes, produtos;
+    try {
+      [vendas, clientes, produtos] = await Promise.all([api('/vendas'), api('/clientes'), api('/produtos')]);
+    } catch (erro) { mostrarToast(erro.message, 'erro'); return; }
+
+    const hojeISO = new Date().toISOString().slice(0, 10);
+    const vendasHoje = vendas.filter((v) => v.status === 'concluida' && String(v.data).slice(0, 10) === hojeISO);
+    const totalHoje = vendasHoje.reduce((s, v) => s + v.total, 0);
+    const totalAReceber = clientes.reduce((s, c) => s + c.saldo_devedor, 0);
+    const clientesComFiado = clientes.filter((c) => c.saldo_devedor > 0).length;
+    const estoqueBaixo = produtos.filter((p) => p.controla_estoque && p.estoque <= p.estoque_minimo).length;
+
+    document.getElementById('dash-vendas-hoje').textContent = String(vendasHoje.length);
+    document.getElementById('dash-total-hoje').textContent = formatarMoeda(totalHoje);
+    document.getElementById('dash-a-receber').textContent = formatarMoeda(totalAReceber);
+    document.getElementById('dash-clientes-fiado').textContent = String(clientesComFiado);
+    document.getElementById('dash-estoque-baixo').textContent = String(estoqueBaixo);
+
+    document.getElementById('dash-ultimas-vendas').innerHTML = vendas.slice(0, 8).map((v) => `
+      <tr>
+        <td>#${v.id}</td>
+        <td>${formatarDataHora(v.data)}</td>
+        <td>${v.cliente_nome || '—'}</td>
+        <td>${formatarMoeda(v.total)}</td>
+        <td>${v.status === 'cancelada' ? '<span class="tag vermelho">Cancelada</span>' : '<span class="tag verde">Concluída</span>'}</td>
+      </tr>`).join('') || '<tr><td colspan="5" style="color:var(--cor-texto-suave)">Nenhuma venda registrada.</td></tr>';
+  }
+
+  // ==========================================================================
+  // Fiado (clientes com saldo devedor > 0)
+  // ==========================================================================
+  async function carregarFiadoView() {
+    let clientes;
+    try { clientes = await api('/clientes'); } catch (erro) { mostrarToast(erro.message, 'erro'); return; }
+
+    const devedores = clientes.filter((c) => c.saldo_devedor > 0).sort((a, b) => b.saldo_devedor - a.saldo_devedor);
+    const corpo = document.getElementById('tabela-fiado');
+    corpo.innerHTML = devedores.map((c) => `
+      <tr>
+        <td>${c.nome}</td>
+        <td>${c.telefone || '—'}</td>
+        <td>${formatarMoeda(c.limite_credito)}</td>
+        <td><span class="tag vermelho">${formatarMoeda(c.saldo_devedor)}</span></td>
+        <td style="text-align:right;"><button class="btn btn-sm btn-secundario" data-detalhe="${c.id}">Ver detalhes</button></td>
+      </tr>`).join('') || '<tr><td colspan="5" style="color:var(--cor-texto-suave)">Nenhum cliente com fiado em aberto. 🎉</td></tr>';
+
+    corpo.querySelectorAll('[data-detalhe]').forEach((btn) => {
+      btn.addEventListener('click', () => abrirDetalheCliente(Number(btn.dataset.detalhe)));
+    });
+  }
+
+  // ==========================================================================
+  // Categorias (compartilhado entre PDV, cadastro de produtos e gerenciamento)
+  // ==========================================================================
+  async function carregarCategorias(todos = false) {
+    try {
+      estado.categorias = await api(`/categorias${todos ? '?todos=1' : ''}`);
+    } catch (erro) {
+      mostrarToast(erro.message, 'erro');
+    }
+    return estado.categorias;
+  }
+
+  function opcoesCategorias(categoriaSelecionadaId) {
+    return (
+      '<option value="">Sem categoria</option>' +
+      estado.categorias
+        .filter((c) => c.ativo || c.id === categoriaSelecionadaId)
+        .map((c) => `<option value="${c.id}" ${Number(categoriaSelecionadaId) === c.id ? 'selected' : ''}>${c.nome}</option>`)
+        .join('')
+    );
+  }
+
+  async function abrirGerenciarCategorias() {
+    await carregarCategorias(true);
+    renderizarModalCategorias();
+  }
+
+  function renderizarModalCategorias() {
+    abrirModal(`
+      <button class="modal-fechar" onclick="document.getElementById('overlay-modal').classList.remove('ativo')">✕</button>
+      <h3>Categorias de produto</h3>
+      <form id="form-nova-categoria" style="display:flex;gap:8px;margin-bottom:14px;">
+        <input type="text" id="cat-novo-nome" placeholder="Nova categoria..." required style="flex:1;padding:9px 10px;border:1px solid var(--cor-borda);border-radius:8px;" />
+        <button class="btn" type="submit">Adicionar</button>
+      </form>
+      <div class="erro-msg" id="cat-erro"></div>
+      <table>
+        <thead><tr><th>Nome</th><th>Status</th><th></th></tr></thead>
+        <tbody id="cat-tabela"></tbody>
+      </table>
+    `);
+
+    const corpo = document.getElementById('cat-tabela');
+    corpo.innerHTML = estado.categorias.map((c) => `
+      <tr data-linha-categoria="${c.id}">
+        <td>${c.nome}</td>
+        <td>${c.ativo ? '<span class="tag verde">Ativa</span>' : '<span class="tag cinza">Inativa</span>'}</td>
+        <td style="text-align:right;">
+          <button class="btn btn-sm btn-secundario" data-editar-categoria="${c.id}">Editar</button>
+          ${c.ativo ? `<button class="btn btn-sm btn-perigo" data-excluir-categoria="${c.id}">Excluir</button>` : ''}
+        </td>
+      </tr>`).join('') || '<tr><td colspan="3" style="color:var(--cor-texto-suave)">Nenhuma categoria cadastrada.</td></tr>';
+
+    document.getElementById('form-nova-categoria').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const nome = document.getElementById('cat-novo-nome').value.trim();
+      if (!nome) return;
+      try {
+        await api('/categorias', { method: 'POST', body: { nome } });
+        await carregarCategorias(true);
+        renderizarModalCategorias();
+      } catch (erro) {
+        document.getElementById('cat-erro').textContent = erro.message;
+      }
+    });
+
+    corpo.querySelectorAll('[data-excluir-categoria]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Excluir esta categoria? Produtos ja cadastrados nao serao afetados.')) return;
+        try {
+          await api(`/categorias/${btn.dataset.excluirCategoria}`, { method: 'DELETE' });
+          await carregarCategorias(true);
+          renderizarModalCategorias();
+        } catch (erro) { mostrarToast(erro.message, 'erro'); }
+      });
+    });
+
+    corpo.querySelectorAll('[data-editar-categoria]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const categoria = estado.categorias.find((c) => c.id === Number(btn.dataset.editarCategoria));
+        const linha = corpo.querySelector(`[data-linha-categoria="${categoria.id}"]`);
+        linha.innerHTML = `
+          <td colspan="3">
+            <div style="display:flex;gap:8px;">
+              <input type="text" value="${categoria.nome}" style="flex:1;padding:6px 8px;border:1px solid var(--cor-borda);border-radius:6px;" />
+              <button class="btn btn-sm" data-salvar>Salvar</button>
+              <button class="btn btn-sm btn-secundario" data-cancelar>Cancelar</button>
+            </div>
+          </td>`;
+        linha.querySelector('[data-cancelar]').addEventListener('click', renderizarModalCategorias);
+        linha.querySelector('[data-salvar]').addEventListener('click', async () => {
+          const novoNome = linha.querySelector('input').value.trim();
+          if (!novoNome) return;
+          try {
+            await api(`/categorias/${categoria.id}`, { method: 'PUT', body: { nome: novoNome } });
+            await carregarCategorias(true);
+            renderizarModalCategorias();
+          } catch (erro) {
+            mostrarToast(erro.message, 'erro');
+          }
+        });
+      });
+    });
+  }
+
+  document.getElementById('btn-gerenciar-categorias').addEventListener('click', abrirGerenciarCategorias);
+
+  // ==========================================================================
+  // PDV
+  // ==========================================================================
+  async function carregarCategoriasPdv() {
+    await carregarCategorias();
+    const select = document.getElementById('pdv-filtro-categoria');
+    const valorAtual = select.value;
+    select.innerHTML = '<option value="">Todas as categorias</option>' +
+      estado.categorias.map((c) => `<option value="${c.id}">${c.nome}</option>`).join('');
+    select.value = valorAtual;
+  }
+
+  document.getElementById('pdv-btn-codigo-barras').addEventListener('click', () => {
+    document.getElementById('pdv-busca-produto').focus();
+  });
+
+  async function carregarListaProdutosPdv(filtro = '') {
+    const categoriaId = document.getElementById('pdv-filtro-categoria').value;
+    const parametros = new URLSearchParams();
+    if (filtro) parametros.set('busca', filtro);
+    if (categoriaId) parametros.set('categoria_id', categoriaId);
+
+    try {
+      estado.produtos = await api(`/produtos${parametros.toString() ? `?${parametros}` : ''}`);
+    } catch (erro) {
+      mostrarToast(erro.message, 'erro');
+      return;
+    }
+    const lista = document.getElementById('pdv-lista-produtos');
+    lista.innerHTML = '';
+    if (estado.produtos.length === 0) {
+      lista.innerHTML = '<div class="produto-pdv-item"><span style="color:var(--cor-texto-suave)">Nenhum produto encontrado.</span></div>';
+      return;
+    }
+    estado.produtos.forEach((p) => {
+      // Produtos com "controla_estoque" desligado sempre ficam clicaveis. Produtos
+      // com estoque zerado (e controle ativo) ficam com opacidade reduzida, mas
+      // continuam clicaveis (a validacao final acontece no backend).
+      const semEstoque = !!p.controla_estoque && p.estoque <= 0;
+
+      const metaPartes = [];
+      if (p.categoria_nome) metaPartes.push(p.categoria_nome);
+      if (p.tamanho) metaPartes.push(`Tam. ${p.tamanho}`);
+      if (p.codigo_barras) metaPartes.push(p.codigo_barras);
+      if (p.controla_estoque) metaPartes.push(`Estoque: ${p.estoque}`);
+
+      const div = document.createElement('div');
+      div.className = 'produto-pdv-item' + (semEstoque ? ' estoque-zerado' : '');
+      const precoTexto = p.tipo_preco === 'aberto' ? 'Preço aberto' : formatarMoeda(p.preco);
+      div.innerHTML = `
+        <div class="produto-info"><b>${p.nome}</b><span>${metaPartes.join(' · ') || 'Sem detalhes adicionais'}</span></div>
+        <div class="produto-preco-acao">
+          <span class="produto-preco">${precoTexto}</span>
+          <button class="btn btn-sm btn-adicionar" type="button">+ Adicionar</button>
+        </div>`;
+      div.querySelector('button').addEventListener('click', () => adicionarAoCarrinho(p));
+      lista.appendChild(div);
+    });
+  }
+
+  document.getElementById('pdv-busca-produto').addEventListener('input', (ev) => {
+    carregarListaProdutosPdv(ev.target.value.trim());
+  });
+  document.getElementById('pdv-filtro-categoria').addEventListener('change', () => {
+    carregarListaProdutosPdv(document.getElementById('pdv-busca-produto').value.trim());
+  });
+
+  function adicionarAoCarrinho(produto) {
+    let precoUnitario = produto.preco;
+    if (produto.tipo_preco === 'aberto') {
+      const valorInformado = prompt(`Informe o preço para "${produto.nome}":`, '0.00');
+      precoUnitario = Number(valorInformado);
+      if (!precoUnitario || precoUnitario <= 0) {
+        mostrarToast('Preço inválido.', 'erro');
+        return;
+      }
+    }
+    const existente = estado.carrinho.find((i) => i.produto.id === produto.id && i.produto.tipo_preco === 'fixo');
+    if (existente) {
+      existente.quantidade += 1;
+    } else {
+      estado.carrinho.push({ produto, quantidade: 1, preco_unitario: precoUnitario });
+    }
+    renderizarCarrinho();
+  }
+
+  function renderizarCarrinho() {
+    const container = document.getElementById('pdv-carrinho');
+    if (estado.carrinho.length === 0) {
+      container.innerHTML = '<p style="color:var(--cor-texto-suave);font-size:13px;">Nenhum item no carrinho.</p>';
+    } else {
+      container.innerHTML = '';
+      estado.carrinho.forEach((item, indice) => {
+        const linha = document.createElement('div');
+        linha.className = 'carrinho-item';
+        linha.innerHTML = `
+          <span>${item.produto.nome}<br/><span style="color:var(--cor-texto-suave);font-size:12px;">${formatarMoeda(item.preco_unitario)} un. · ${formatarMoeda(item.preco_unitario * item.quantidade)}</span></span>
+          <div class="qtd-controles">
+            <button type="button" data-diminuir>−</button>
+            <span>${item.quantidade}</span>
+            <button type="button" data-aumentar>+</button>
+          </div>
+          <button class="btn btn-sm btn-secundario" data-remover>✕</button>`;
+        linha.querySelector('[data-diminuir]').addEventListener('click', () => {
+          if (item.quantidade > 1) item.quantidade -= 1;
+          renderizarCarrinho();
+        });
+        linha.querySelector('[data-aumentar]').addEventListener('click', () => {
+          item.quantidade += 1;
+          renderizarCarrinho();
+        });
+        linha.querySelector('[data-remover]').addEventListener('click', () => {
+          estado.carrinho.splice(indice, 1);
+          renderizarCarrinho();
+        });
+        container.appendChild(linha);
+      });
+    }
+    atualizarResumoPdv();
+  }
+
+  function calcularSubtotalPdv() {
+    return estado.carrinho.reduce((soma, item) => soma + item.preco_unitario * item.quantidade, 0);
+  }
+
+  function calcularTotalPdv() {
+    const subtotal = calcularSubtotalPdv();
+    const tipo = document.getElementById('pdv-desconto-tipo').value;
+    const valorDesconto = Number(document.getElementById('pdv-desconto-valor').value) || 0;
+    let desconto = 0;
+    if (tipo === 'valor') desconto = Math.min(valorDesconto, subtotal);
+    if (tipo === 'percentual') desconto = subtotal * (Math.min(valorDesconto, 100) / 100);
+    return { subtotal, desconto, total: Math.max(0, subtotal - desconto) };
+  }
+
+  function atualizarResumoPdv() {
+    const { subtotal, desconto, total } = calcularTotalPdv();
+    document.getElementById('pdv-subtotal').textContent = formatarMoeda(subtotal);
+    document.getElementById('pdv-desconto-exibido').textContent = formatarMoeda(desconto);
+    document.getElementById('pdv-total').textContent = formatarMoeda(total);
+  }
+
+  document.getElementById('pdv-desconto-tipo').addEventListener('change', atualizarResumoPdv);
+  document.getElementById('pdv-desconto-valor').addEventListener('input', atualizarResumoPdv);
+
+  // --- busca de cliente no PDV ---
+  document.getElementById('pdv-busca-cliente').addEventListener('input', async (ev) => {
+    const termo = ev.target.value.trim();
+    const div = document.getElementById('pdv-resultado-cliente');
+    if (!termo) { div.innerHTML = ''; return; }
+    try {
+      const clientes = await api(`/clientes?busca=${encodeURIComponent(termo)}`);
+      div.innerHTML = clientes.slice(0, 6).map((c) =>
+        `<div class="produto-pdv-item" style="cursor:pointer;border:1px solid var(--cor-borda);border-radius:6px;margin-bottom:4px;" data-id="${c.id}">
+           <span><b>${c.nome}</b> — ${c.telefone || 'sem telefone'}</span>
+         </div>`
+      ).join('') || '<span style="color:var(--cor-texto-suave)">Nenhum cliente encontrado.</span>';
+      div.querySelectorAll('[data-id]').forEach((elemento) => {
+        elemento.addEventListener('click', () => {
+          const cliente = clientes.find((c) => c.id === Number(elemento.dataset.id));
+          selecionarClientePdv(cliente);
+          div.innerHTML = '';
+          document.getElementById('pdv-busca-cliente').value = '';
+        });
+      });
+    } catch (erro) {
+      mostrarToast(erro.message, 'erro');
+    }
+  });
+
+  function selecionarClientePdv(cliente) {
+    estado.clienteSelecionado = cliente;
+    const painel = document.getElementById('pdv-cliente-selecionado');
+    painel.classList.remove('escondido');
+    const creditoDisponivel = cliente.limite_credito - cliente.saldo_devedor;
+    painel.innerHTML = `<b>${cliente.nome}</b> selecionado ·
+      crédito disponível: ${formatarMoeda(creditoDisponivel)}
+      <button class="btn btn-sm btn-secundario" style="margin-left:8px;" id="pdv-remover-cliente">remover</button>`;
+    document.getElementById('pdv-remover-cliente').addEventListener('click', () => {
+      estado.clienteSelecionado = null;
+      painel.classList.add('escondido');
+      atualizarInfoCreditoPdv();
+    });
+    atualizarInfoCreditoPdv();
+  }
+
+  function atualizarInfoCreditoPdv() {
+    const info = document.getElementById('pdv-info-credito');
+    const temFiado = estado.pagamentos.some((p) => p.forma === 'fiado');
+    if (temFiado && !estado.clienteSelecionado) {
+      info.textContent = 'Selecione um cliente para vender fiado.';
+      info.style.color = 'var(--cor-perigo)';
+    } else if (temFiado && estado.clienteSelecionado) {
+      const disponivel = estado.clienteSelecionado.limite_credito - estado.clienteSelecionado.saldo_devedor;
+      info.textContent = `Crédito disponível de ${estado.clienteSelecionado.nome}: ${formatarMoeda(disponivel)}`;
+      info.style.color = '';
+    } else {
+      info.textContent = '';
+    }
+
+    document.getElementById('pdv-bloco-data-fiado').classList.toggle('escondido', !temFiado);
+    if (temFiado) {
+      renderizarParcelasFiado();
+    }
+  }
+
+  // --- calculo client-side de data recorrente (usado so para sugerir a data
+  // de cada parcela; o backend continua recebendo sempre uma data concreta) ---
+  function ultimoDiaDoMesCliente(ano, mesIndiceZero) {
+    return new Date(ano, mesIndiceZero + 1, 0).getDate();
+  }
+  function nEsimoDiaUtilCliente(ano, mesIndiceZero, n) {
+    let contador = 0, dia = 0;
+    const totalDias = ultimoDiaDoMesCliente(ano, mesIndiceZero);
+    while (dia < totalDias) {
+      dia += 1;
+      const diaSemana = new Date(ano, mesIndiceZero, dia).getDay();
+      if (diaSemana !== 0 && diaSemana !== 6) {
+        contador += 1;
+        if (contador === n) return dia;
+      }
+    }
+    return totalDias;
+  }
+  function diaDoCodigoRecorrenteCliente(codigo, ano, mesIndiceZero) {
+    if (codigo === 'ultimo_dia') return ultimoDiaDoMesCliente(ano, mesIndiceZero);
+    if (codigo === '5_util') return nEsimoDiaUtilCliente(ano, mesIndiceZero, 5);
+    if (codigo === '10_util') return nEsimoDiaUtilCliente(ano, mesIndiceZero, 10);
+    const m = codigo.match(/^dia_(\d{2})$/);
+    if (m) return Math.min(Number(m[1]), ultimoDiaDoMesCliente(ano, mesIndiceZero));
+    return 1;
+  }
+  function calcularDataRecorrenteCliente(codigo, dataBase) {
+    let ano = dataBase.getFullYear();
+    let mes = dataBase.getMonth();
+    let dia = diaDoCodigoRecorrenteCliente(codigo, ano, mes);
+    let candidato = new Date(ano, mes, dia);
+    const baseSemHora = new Date(dataBase.getFullYear(), dataBase.getMonth(), dataBase.getDate());
+    if (candidato < baseSemHora) {
+      mes += 1;
+      if (mes > 11) { mes = 0; ano += 1; }
+      dia = diaDoCodigoRecorrenteCliente(codigo, ano, mes);
+      candidato = new Date(ano, mes, dia);
+    }
+    return candidato.toISOString().slice(0, 10);
+  }
+
+  const OPCOES_RECORRENTE = [
+    ['dia_05', 'Todo dia 05'], ['dia_10', 'Todo dia 10'], ['dia_15', 'Todo dia 15'],
+    ['dia_20', 'Todo dia 20'], ['dia_25', 'Todo dia 25'], ['dia_30', 'Todo dia 30'],
+    ['5_util', '5º dia útil'], ['10_util', '10º dia útil'], ['ultimo_dia', 'Último dia do mês'],
+  ];
+
+  // --- parcelamento do fiado (numero de parcelas + data de cada uma) ---
+  function calcularValorFiadoAtual() {
+    return estado.pagamentos
+      .filter((p) => p.forma === 'fiado')
+      .reduce((soma, p) => soma + (Number(p.valor) || 0), 0);
+  }
+
+  function sugerirDataParcela(indice) {
+    const data = new Date();
+    data.setDate(data.getDate() + 30 * (indice + 1));
+    return data.toISOString().slice(0, 10);
+  }
+
+  function renderizarParcelasFiado() {
+    const numeroParcelas = Number(document.getElementById('pdv-numero-parcelas').value) || 1;
+    const valorFiado = Number(calcularValorFiadoAtual().toFixed(2));
+
+    const valorBase = Math.floor((valorFiado / numeroParcelas) * 100) / 100;
+    const novasParcelas = [];
+    let somaParcial = 0;
+    for (let i = 0; i < numeroParcelas; i++) {
+      const existente = estado.parcelasFiado[i];
+      const ultima = i === numeroParcelas - 1;
+      const valor = ultima ? Number((valorFiado - somaParcial).toFixed(2)) : valorBase;
+      somaParcial += valor;
+      novasParcelas.push({
+        numero_parcela: i + 1,
+        valor,
+        data_vencimento: existente?.data_vencimento || sugerirDataParcela(i),
+        tipo_data: existente?.tipo_data || 'exata',
+        codigo_recorrente: existente?.codigo_recorrente || null,
+      });
+    }
+    estado.parcelasFiado = novasParcelas;
+
+    const container = document.getElementById('pdv-lista-parcelas');
+    container.innerHTML = estado.parcelasFiado.map((parcela, indice) => `
+      <div class="parcela-bloco">
+        <div class="parcela-titulo">Parcela ${parcela.numero_parcela}/${numeroParcelas} — ${formatarMoeda(parcela.valor)}</div>
+        <div class="opcoes-data-pagamento">
+          <button type="button" data-indice-parcela="${indice}" data-tipo-data="exata" class="${parcela.tipo_data === 'exata' ? 'ativo' : ''}">Data exata</button>
+          <button type="button" data-indice-parcela="${indice}" data-tipo-data="recorrente" class="${parcela.tipo_data === 'recorrente' ? 'ativo' : ''}">Data recorrente</button>
+        </div>
+        ${parcela.tipo_data === 'exata'
+          ? `<input type="date" value="${parcela.data_vencimento}" data-indice-parcela="${indice}" data-campo="data" />`
+          : `<select data-indice-parcela="${indice}" data-campo="codigo">
+               ${OPCOES_RECORRENTE.map(([v, r]) => `<option value="${v}" ${parcela.codigo_recorrente === v ? 'selected' : ''}>${r}</option>`).join('')}
+             </select>
+             <div class="parcela-data-calculada">Vence em ${formatarData(parcela.data_vencimento)}</div>`
+        }
+      </div>
+    `).join('');
+
+    container.querySelectorAll('[data-tipo-data]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const i = Number(btn.dataset.indiceParcela);
+        estado.parcelasFiado[i].tipo_data = btn.dataset.tipoData;
+        if (btn.dataset.tipoData === 'recorrente') {
+          const codigo = estado.parcelasFiado[i].codigo_recorrente || 'dia_05';
+          estado.parcelasFiado[i].codigo_recorrente = codigo;
+          estado.parcelasFiado[i].data_vencimento = calcularDataRecorrenteCliente(codigo, new Date());
+        }
+        renderizarParcelasFiado();
+      });
+    });
+    container.querySelectorAll('[data-campo="data"]').forEach((input) => {
+      input.addEventListener('input', (ev) => {
+        estado.parcelasFiado[Number(ev.target.dataset.indiceParcela)].data_vencimento = ev.target.value;
+      });
+    });
+    container.querySelectorAll('[data-campo="codigo"]').forEach((select) => {
+      select.addEventListener('change', (ev) => {
+        const i = Number(ev.target.dataset.indiceParcela);
+        estado.parcelasFiado[i].codigo_recorrente = ev.target.value;
+        estado.parcelasFiado[i].data_vencimento = calcularDataRecorrenteCliente(ev.target.value, new Date());
+        renderizarParcelasFiado();
+      });
+    });
+  }
+
+  document.getElementById('pdv-numero-parcelas').addEventListener('change', () => {
+    estado.parcelasFiado = [];
+    renderizarParcelasFiado();
+  });
+
+  // --- pagamentos (padrao 1 forma, com link discreto para expandir a 2ª) ---
+  const FORMAS_PAGAMENTO = [
+    ['dinheiro', 'Dinheiro'],
+    ['pix', 'PIX'],
+    ['cartao_credito', 'Crédito'],
+    ['cartao_debito', 'Débito'],
+    ['fiado', 'Fiado'],
+  ];
+
+  function renderizarPagamentos() {
+    const container = document.getElementById('pdv-pagamentos');
+    container.innerHTML = '';
+    estado.pagamentos.forEach((pagamento, indice) => {
+      const linha = document.createElement('div');
+      linha.className = 'pagamento-linha';
+      linha.innerHTML = `
+        <select>${FORMAS_PAGAMENTO.map(([v, r]) => `<option value="${v}" ${pagamento.forma === v ? 'selected' : ''}>${r}</option>`).join('')}</select>
+        <input type="number" min="0" step="0.01" value="${pagamento.valor || ''}" placeholder="0,00" />
+        ${estado.pagamentos.length > 1 ? '<button class="btn btn-sm btn-secundario" type="button" style="grid-column:span 2;margin-top:4px;">remover</button>' : ''}
+      `;
+      linha.querySelector('select').addEventListener('change', (ev) => {
+        pagamento.forma = ev.target.value;
+        atualizarInfoCreditoPdv();
+      });
+      linha.querySelector('input').addEventListener('input', (ev) => {
+        pagamento.valor = Number(ev.target.value) || 0;
+        if (pagamento.forma === 'fiado') renderizarParcelasFiado();
+      });
+      const btnRemover = linha.querySelector('button');
+      if (btnRemover) {
+        btnRemover.addEventListener('click', () => {
+          estado.pagamentos.splice(indice, 1);
+          renderizarPagamentos();
+          atualizarInfoCreditoPdv();
+        });
+      }
+      container.appendChild(linha);
+    });
+    document.getElementById('pdv-add-pagamento').classList.toggle('escondido', estado.pagamentos.length >= 2);
+  }
+  renderizarPagamentos();
+
+  document.getElementById('pdv-add-pagamento').addEventListener('click', () => {
+    if (estado.pagamentos.length >= 2) return;
+    estado.pagamentos.push({ forma: 'pix', valor: 0 });
+    renderizarPagamentos();
+  });
+
+  function limparPdv() {
+    estado.carrinho = [];
+    estado.clienteSelecionado = null;
+    estado.pagamentos = [{ forma: 'dinheiro', valor: 0 }];
+    estado.parcelasFiado = [];
+    document.getElementById('pdv-desconto-tipo').value = 'nenhum';
+    document.getElementById('pdv-desconto-valor').value = 0;
+    document.getElementById('pdv-cliente-selecionado').classList.add('escondido');
+    document.getElementById('pdv-info-credito').textContent = '';
+    document.getElementById('pdv-bloco-data-fiado').classList.add('escondido');
+    document.getElementById('pdv-numero-parcelas').value = '1';
+    document.getElementById('pdv-lista-parcelas').innerHTML = '';
+    renderizarCarrinho();
+    renderizarPagamentos();
+  }
+
+  document.getElementById('pdv-finalizar').addEventListener('click', async () => {
+    const erroEl = document.getElementById('pdv-erro');
+    erroEl.textContent = '';
+
+    if (estado.carrinho.length === 0) {
+      erroEl.textContent = 'Adicione ao menos um item ao carrinho.';
+      return;
+    }
+
+    const temFiado = estado.pagamentos.some((p) => p.forma === 'fiado');
+    if (temFiado && estado.parcelasFiado.some((p) => !p.data_vencimento)) {
+      erroEl.textContent = 'Informe a data de vencimento de todas as parcelas do fiado.';
+      return;
+    }
+
+    const corpo = {
+      cliente_id: estado.clienteSelecionado ? estado.clienteSelecionado.id : null,
+      itens: estado.carrinho.map((i) => ({
+        produto_id: i.produto.id,
+        quantidade: i.quantidade,
+        preco_unitario: i.preco_unitario,
+      })),
+      desconto_tipo: document.getElementById('pdv-desconto-tipo').value,
+      desconto_valor: Number(document.getElementById('pdv-desconto-valor').value) || 0,
+      pagamentos: estado.pagamentos,
+      parcelas: temFiado ? estado.parcelasFiado.map((p) => ({
+        numero_parcela: p.numero_parcela, valor: p.valor, data_vencimento: p.data_vencimento,
+      })) : [],
+    };
+
+    try {
+      const venda = await api('/vendas', { method: 'POST', body: corpo });
+      mostrarToast('Venda registrada com sucesso!');
+      exibirCupom(venda);
+      limparPdv();
+    } catch (erro) {
+      erroEl.textContent = erro.message;
+    }
+  });
+
+  // --- cupom 58mm ---
+  function exibirCupom(venda) {
+    const dataFormatada = formatarDataHora(venda.data);
+    const itensHtml = venda.itens.map((i) => `
+      <div class="linha"><span>${i.quantidade}x ${i.nome_produto}</span><span>${formatarMoeda(i.subtotal)}</span></div>
+    `).join('');
+
+    const formasHtml = [
+      venda.forma_pagamento_1 ? `<div class="linha"><span>${FORMAS_PAGAMENTO.find(f=>f[0]===venda.forma_pagamento_1)?.[1] || venda.forma_pagamento_1}</span><span>${formatarMoeda(venda.valor_pagamento_1)}</span></div>` : '',
+      venda.forma_pagamento_2 ? `<div class="linha"><span>${FORMAS_PAGAMENTO.find(f=>f[0]===venda.forma_pagamento_2)?.[1] || venda.forma_pagamento_2}</span><span>${formatarMoeda(venda.valor_pagamento_2)}</span></div>` : '',
+    ].join('');
+
+    abrirModal(`
+      <button class="modal-fechar" onclick="document.getElementById('overlay-modal').classList.remove('ativo')">✕</button>
+      <div class="imprimivel">
+        <div class="centro titulo">Estoque</div>
+        <div class="centro">Cupom não fiscal</div>
+        <hr/>
+        <div>Venda #${venda.id} — ${dataFormatada}</div>
+        <hr/>
+        ${itensHtml}
+        <hr/>
+        <div class="linha"><span>Subtotal</span><span>${formatarMoeda(venda.subtotal)}</span></div>
+        <div class="linha"><span>Desconto</span><span>${formatarMoeda(venda.desconto_valor)}</span></div>
+        <div class="linha titulo"><span>TOTAL</span><span>${formatarMoeda(venda.total)}</span></div>
+        <hr/>
+        ${formasHtml}
+        ${venda.valor_fiado > 0 ? `<div class="linha"><span>Fiado</span><span>${formatarMoeda(venda.valor_fiado)}</span></div>` : ''}
+        ${venda.parcelas && venda.parcelas.length > 0 ? `
+          <hr/>
+          <div class="centro">Parcelas do fiado</div>
+          ${venda.parcelas.map((p) => `<div class="linha"><span>${p.numero_parcela}/${p.total_parcelas} — ${formatarData(p.data_vencimento)}</span><span>${formatarMoeda(p.valor)}</span></div>`).join('')}
+        ` : ''}
+        <hr/>
+        <div class="centro">Obrigado pela preferência!</div>
+      </div>
+      <button class="btn btn-full" style="margin-top:16px;" onclick="window.print()">Imprimir cupom (58mm)</button>
+    `);
+  }
+
+  // ==========================================================================
+  // Produtos
+  // ==========================================================================
+  async function carregarProdutosView(filtro = '') {
+    let produtos;
+    try {
+      produtos = await api(`/produtos${filtro ? `?busca=${encodeURIComponent(filtro)}` : ''}`);
+    } catch (erro) {
+      mostrarToast(erro.message, 'erro');
+      return;
+    }
+    const corpo = document.getElementById('tabela-produtos');
+    corpo.innerHTML = produtos.map((p) => `
+      <tr>
+        <td>${p.nome}</td>
+        <td>${p.categoria_nome || '—'}</td>
+        <td>${p.tipo_preco === 'aberto' ? 'Preço aberto' : formatarMoeda(p.preco)}</td>
+        <td>${!p.controla_estoque ? '<span class="tag cinza">Não controla</span>' : (p.estoque <= p.estoque_minimo ? `<span class="tag laranja">${p.estoque}</span>` : p.estoque)}</td>
+        <td style="text-align:right;">
+          <button class="btn btn-sm btn-secundario" data-editar="${p.id}">Editar</button>
+          ${estado.usuario.role === 'admin' ? `<button class="btn btn-sm btn-perigo" data-excluir="${p.id}">Excluir</button>` : ''}
+        </td>
+      </tr>`).join('') || '<tr><td colspan="5" style="color:var(--cor-texto-suave)">Nenhum produto cadastrado.</td></tr>';
+
+    corpo.querySelectorAll('[data-editar]').forEach((btn) => {
+      btn.addEventListener('click', () => abrirFormularioProduto(produtos.find((p) => p.id === Number(btn.dataset.editar))));
+    });
+    corpo.querySelectorAll('[data-excluir]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Excluir este produto?')) return;
+        try {
+          await api(`/produtos/${btn.dataset.excluir}`, { method: 'DELETE' });
+          mostrarToast('Produto excluído.');
+          carregarProdutosView();
+        } catch (erro) { mostrarToast(erro.message, 'erro'); }
+      });
+    });
+  }
+
+  document.getElementById('produtos-busca').addEventListener('input', (ev) => carregarProdutosView(ev.target.value.trim()));
+  document.getElementById('btn-novo-produto').addEventListener('click', () => abrirFormularioProduto());
+
+  async function abrirFormularioProduto(produto) {
+    await carregarCategorias(true);
+    const p = produto || { nome: '', categoria_id: '', codigo_barras: '', tipo_preco: 'fixo', preco: '', controla_estoque: 1, estoque: 0, estoque_minimo: 0 };
+    abrirModal(`
+      <button class="modal-fechar" onclick="document.getElementById('overlay-modal').classList.remove('ativo')">✕</button>
+      <h3>${produto ? 'Editar produto' : 'Novo produto'}</h3>
+      <form id="form-produto">
+        <div class="campo"><label>Nome</label><input required id="pf-nome" value="${p.nome}" /></div>
+        <div class="campo">
+          <label>Categoria</label>
+          <select id="pf-categoria">${opcoesCategorias(p.categoria_id)}</select>
+        </div>
+        <div class="campo"><label>Código de barras</label><input id="pf-codigo" value="${p.codigo_barras || ''}" /></div>
+        <div class="campo">
+          <label>Tipo de preço</label>
+          <select id="pf-tipo-preco">
+            <option value="fixo" ${p.tipo_preco === 'fixo' ? 'selected' : ''}>Fixo</option>
+            <option value="aberto" ${p.tipo_preco === 'aberto' ? 'selected' : ''}>Aberto (informado na venda)</option>
+          </select>
+        </div>
+        <div class="campo" id="campo-preco"><label>Preço (R$)</label><input type="number" step="0.01" id="pf-preco" value="${p.preco || ''}" /></div>
+
+        <div class="campo-toggle">
+          <span class="switch">
+            <input type="checkbox" id="pf-controla-estoque" ${p.controla_estoque ? 'checked' : ''} />
+            <span class="trilho"></span>
+          </span>
+          <label for="pf-controla-estoque">Controlar estoque</label>
+        </div>
+
+        <div id="pf-bloco-estoque" class="${p.controla_estoque ? '' : 'escondido'}">
+          <div class="campo"><label>Estoque</label><input type="number" step="0.01" id="pf-estoque" value="${p.estoque}" /></div>
+          <div class="campo"><label>Estoque mínimo</label><input type="number" step="0.01" id="pf-estoque-minimo" value="${p.estoque_minimo}" /></div>
+        </div>
+
+        <div class="erro-msg" id="pf-erro"></div>
+        <button class="btn btn-full" type="submit">Salvar</button>
+      </form>
+    `);
+
+    document.getElementById('pf-controla-estoque').addEventListener('change', (ev) => {
+      document.getElementById('pf-bloco-estoque').classList.toggle('escondido', !ev.target.checked);
+    });
+
+    document.getElementById('form-produto').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const controlaEstoque = document.getElementById('pf-controla-estoque').checked;
+      const corpo = {
+        nome: document.getElementById('pf-nome').value.trim(),
+        categoria_id: document.getElementById('pf-categoria').value || null,
+        codigo_barras: document.getElementById('pf-codigo').value.trim() || null,
+        tipo_preco: document.getElementById('pf-tipo-preco').value,
+        preco: Number(document.getElementById('pf-preco').value) || 0,
+        controla_estoque: controlaEstoque,
+        estoque: Number(document.getElementById('pf-estoque').value) || 0,
+        estoque_minimo: Number(document.getElementById('pf-estoque-minimo').value) || 0,
+      };
+      try {
+        if (produto) {
+          await api(`/produtos/${produto.id}`, { method: 'PUT', body: corpo });
+        } else {
+          await api('/produtos', { method: 'POST', body: corpo });
+        }
+        fecharModal();
+        mostrarToast('Produto salvo com sucesso!');
+        carregarProdutosView();
+      } catch (erro) {
+        document.getElementById('pf-erro').textContent = erro.message;
+      }
+    });
+  }
+
+  // ==========================================================================
+  // Clientes
+  // ==========================================================================
+  async function carregarClientesView(filtro = '') {
+    let clientes;
+    try {
+      clientes = await api(`/clientes${filtro ? `?busca=${encodeURIComponent(filtro)}` : ''}`);
+    } catch (erro) { mostrarToast(erro.message, 'erro'); return; }
+
+    const corpo = document.getElementById('tabela-clientes');
+    corpo.innerHTML = clientes.map((c) => `
+      <tr>
+        <td>${c.nome}</td>
+        <td>${c.telefone || '—'}</td>
+        <td>${formatarMoeda(c.limite_credito)}</td>
+        <td>${c.saldo_devedor > 0 ? `<span class="tag vermelho">${formatarMoeda(c.saldo_devedor)}</span>` : `<span class="tag verde">R$ 0,00</span>`}</td>
+        <td style="text-align:right;">
+          <button class="btn btn-sm btn-secundario" data-detalhe="${c.id}">Detalhes</button>
+          <button class="btn btn-sm btn-secundario" data-editar="${c.id}">Editar</button>
+        </td>
+      </tr>`).join('') || '<tr><td colspan="5" style="color:var(--cor-texto-suave)">Nenhum cliente cadastrado.</td></tr>';
+
+    corpo.querySelectorAll('[data-editar]').forEach((btn) => {
+      btn.addEventListener('click', () => abrirFormularioCliente(clientes.find((c) => c.id === Number(btn.dataset.editar))));
+    });
+    corpo.querySelectorAll('[data-detalhe]').forEach((btn) => {
+      btn.addEventListener('click', () => abrirDetalheCliente(Number(btn.dataset.detalhe)));
+    });
+  }
+
+  document.getElementById('clientes-busca').addEventListener('input', (ev) => carregarClientesView(ev.target.value.trim()));
+  document.getElementById('btn-novo-cliente').addEventListener('click', () => abrirFormularioCliente());
+
+  function abrirFormularioCliente(cliente) {
+    const c = cliente || { nome: '', telefone: '', email: '', data_nascimento: '', dia_pagamento: '', limite_credito: 0 };
+    abrirModal(`
+      <button class="modal-fechar" onclick="document.getElementById('overlay-modal').classList.remove('ativo')">✕</button>
+      <h3>${cliente ? 'Editar cliente' : 'Novo cliente'}</h3>
+      <form id="form-cliente">
+        <div class="campo"><label>Nome</label><input required id="cf-nome" value="${c.nome}" /></div>
+        <div class="campo"><label>Telefone (WhatsApp)</label><input id="cf-telefone" value="${c.telefone || ''}" placeholder="11999998888" /></div>
+        <div class="campo"><label>Email</label><input type="email" id="cf-email" value="${c.email || ''}" /></div>
+        <div class="campo"><label>Data de nascimento</label><input type="date" id="cf-nascimento" value="${c.data_nascimento || ''}" /></div>
+        <div class="campo"><label>Dia de pagamento (1-31)</label><input type="number" min="1" max="31" id="cf-dia-pagamento" value="${c.dia_pagamento || ''}" /></div>
+        <div class="campo"><label>Limite de crédito (fiado)</label><input type="number" step="0.01" id="cf-limite" value="${c.limite_credito}" /></div>
+        <div class="erro-msg" id="cf-erro"></div>
+        <button class="btn btn-full" type="submit">Salvar</button>
+      </form>
+    `);
+
+    document.getElementById('form-cliente').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const corpo = {
+        nome: document.getElementById('cf-nome').value.trim(),
+        telefone: document.getElementById('cf-telefone').value.trim() || null,
+        email: document.getElementById('cf-email').value.trim() || null,
+        data_nascimento: document.getElementById('cf-nascimento').value || null,
+        dia_pagamento: document.getElementById('cf-dia-pagamento').value || null,
+        limite_credito: Number(document.getElementById('cf-limite').value) || 0,
+      };
+      try {
+        if (cliente) {
+          await api(`/clientes/${cliente.id}`, { method: 'PUT', body: corpo });
+        } else {
+          await api('/clientes', { method: 'POST', body: corpo });
+        }
+        fecharModal();
+        mostrarToast('Cliente salvo com sucesso!');
+        carregarClientesView();
+      } catch (erro) {
+        document.getElementById('cf-erro').textContent = erro.message;
+      }
+    });
+  }
+
+  // ==========================================================================
+  // Detalhe do cliente (cards resumo + timeline unificada e filtravel)
+  // ==========================================================================
+  const ICONES_TIMELINE = { compra: '🛍', pagamento: '💰', parcela: '📅' };
+
+  function abrirDetalheCliente(clienteId) {
+    mudarView('cliente-detalhe');
+    carregarDetalheCliente(clienteId);
+  }
+
+  document.getElementById('cd-voltar').addEventListener('click', () => mudarView('clientes'));
+
+  async function carregarDetalheCliente(clienteId) {
+    let cliente, historico;
+    try {
+      [cliente, historico] = await Promise.all([
+        api(`/clientes/${clienteId}`),
+        api(`/clientes/${clienteId}/historico`),
+      ]);
+    } catch (erro) { mostrarToast(erro.message, 'erro'); mudarView('clientes'); return; }
+
+    estado.clienteDetalhe = { cliente, historico };
+    estado.filtroTimeline = 'tudo';
+    document.querySelectorAll('.filtros-timeline button').forEach((b) => b.classList.toggle('ativo', b.dataset.filtro === 'tudo'));
+
+    document.getElementById('cd-nome').textContent = cliente.nome;
+    document.getElementById('cd-telefone').textContent = cliente.telefone || 'sem telefone cadastrado';
+    document.getElementById('cd-total-comprado').textContent = formatarMoeda(historico.resumo.total_comprado);
+    document.getElementById('cd-total-pago').textContent = formatarMoeda(historico.resumo.total_pago);
+    document.getElementById('cd-saldo-devedor').textContent = formatarMoeda(historico.resumo.saldo_devedor);
+    document.getElementById('cd-proxima-parcela').textContent = historico.resumo.proxima_parcela
+      ? `${formatarData(historico.resumo.proxima_parcela.data_vencimento)} — ${formatarMoeda(historico.resumo.proxima_parcela.valor)}`
+      : 'Nenhuma';
+
+    renderizarTimelineCliente();
+  }
+
+  document.querySelectorAll('.filtros-timeline button').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      estado.filtroTimeline = btn.dataset.filtro;
+      document.querySelectorAll('.filtros-timeline button').forEach((b) => b.classList.remove('ativo'));
+      btn.classList.add('ativo');
+      renderizarTimelineCliente();
+    });
+  });
+
+  function renderizarTimelineCliente() {
+    if (!estado.clienteDetalhe) return;
+    const { timeline } = estado.clienteDetalhe.historico;
+
+    const itensFiltrados = timeline.filter((item) => {
+      if (estado.filtroTimeline === 'compras') return item.tipo === 'compra';
+      if (estado.filtroTimeline === 'pagamentos') return item.tipo === 'pagamento';
+      if (estado.filtroTimeline === 'aberto') return item.tipo === 'parcela' && item.status !== 'pago' && item.status !== 'cancelada';
+      return true;
+    });
+
+    const container = document.getElementById('cd-timeline');
+    if (itensFiltrados.length === 0) {
+      container.innerHTML = '<p style="color:var(--cor-texto-suave);font-size:13px;">Nada para mostrar neste filtro.</p>';
+      return;
+    }
+
+    container.innerHTML = itensFiltrados.map((item, indice) => {
+      let titulo = '';
+      let detalhe = '';
+      let valorTexto = '';
+
+      if (item.tipo === 'compra') {
+        titulo = `Venda #${item.venda_id}${item.status === 'cancelada' ? ' (cancelada)' : ''}`;
+        detalhe = `${item.itens_resumo || 'sem itens'} · ${item.total_itens} ite${item.total_itens === 1 ? 'm' : 'ns'}`;
+        valorTexto = formatarMoeda(item.total);
+      } else if (item.tipo === 'pagamento') {
+        titulo = `Pagamento recebido (${FORMAS_RECEBIMENTO[item.forma] || item.forma})`;
+        detalhe = item.saldo_apos != null ? `Saldo após: ${formatarMoeda(item.saldo_apos)}` : 'Pagamento registrado';
+        valorTexto = formatarMoeda(item.valor);
+      } else {
+        const tagStatus = item.status === 'pago' ? '<span class="tag verde">Paga</span>'
+          : item.status === 'cancelada' ? '<span class="tag cinza">Cancelada</span>'
+          : item.status === 'atrasado' ? '<span class="tag vermelho">Atrasada</span>'
+          : '<span class="tag laranja">Pendente</span>';
+        titulo = `Parcela ${item.numero_parcela}/${item.total_parcelas} — venda #${item.venda_id}`;
+        detalhe = tagStatus;
+        valorTexto = formatarMoeda(item.valor);
+      }
+
+      return `
+        <div class="timeline-item" data-indice="${indice}">
+          <div class="icone">${ICONES_TIMELINE[item.tipo]}</div>
+          <div class="conteudo">
+            <b>${titulo}</b>
+            <span>${formatarData(item.data)} · ${detalhe}</span>
+          </div>
+          <div class="valor">${valorTexto}</div>
+        </div>`;
+    }).join('');
+
+    container.querySelectorAll('[data-indice]').forEach((el) => {
+      el.addEventListener('click', () => abrirDetalheItemTimeline(itensFiltrados[Number(el.dataset.indice)]));
+    });
+  }
+
+  async function abrirDetalheItemTimeline(item) {
+    if (item.tipo === 'compra') {
+      try {
+        const venda = await api(`/vendas/${item.venda_id}`);
+        exibirCupom(venda);
+      } catch (erro) { mostrarToast(erro.message, 'erro'); }
+      return;
+    }
+
+    if (item.tipo === 'pagamento') {
+      exibirComprovanteRecebimento({
+        cliente_nome: estado.clienteDetalhe.cliente.nome,
+        valor_pago: item.valor,
+        forma: item.forma,
+        data: item.data,
+        saldo_anterior: item.saldo_anterior,
+        novo_saldo_devedor: item.saldo_apos,
+      });
+      return;
+    }
+
+    // tipo 'parcela'
+    if (item.status === 'pago' || item.status === 'cancelada') {
+      abrirModal(`
+        <button class="modal-fechar" onclick="document.getElementById('overlay-modal').classList.remove('ativo')">✕</button>
+        <h3>Parcela ${item.numero_parcela}/${item.total_parcelas}</h3>
+        <div class="resumo-linha"><span>Valor</span><span>${formatarMoeda(item.valor)}</span></div>
+        <div class="resumo-linha"><span>Vencimento</span><span>${formatarData(item.data)}</span></div>
+        <div class="resumo-linha"><span>Status</span><span>${item.status === 'pago' ? 'Paga' : 'Cancelada'}</span></div>
+      `);
+      return;
+    }
+
+    abrirModal(`
+      <button class="modal-fechar" onclick="document.getElementById('overlay-modal').classList.remove('ativo')">✕</button>
+      <h3>Registrar pagamento da parcela ${item.numero_parcela}/${item.total_parcelas}</h3>
+      <div class="resumo-linha"><span>Vencimento</span><span>${formatarData(item.data)}</span></div>
+      <div class="resumo-linha total"><span>Valor da parcela</span><span>${formatarMoeda(item.valor)}</span></div>
+      <hr style="margin:14px 0;border:none;border-top:1px solid var(--cor-borda);" />
+      <form id="form-pagar-parcela">
+        <div class="campo">
+          <label>Valor recebido</label>
+          <input type="number" step="0.01" min="0.01" id="pp-valor" value="${item.valor}" required />
+        </div>
+        <div class="campo">
+          <label>Forma de pagamento</label>
+          <select id="pp-forma">
+            <option value="dinheiro">Dinheiro</option>
+            <option value="pix">PIX</option>
+            <option value="cartao_credito">Crédito</option>
+            <option value="cartao_debito">Débito</option>
+          </select>
+        </div>
+        <div class="erro-msg" id="pp-erro"></div>
+        <button class="btn btn-full" type="submit">Confirmar recebimento</button>
+      </form>
+    `);
+
+    document.getElementById('form-pagar-parcela').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const valor = Number(document.getElementById('pp-valor').value);
+      const forma = document.getElementById('pp-forma').value;
+      try {
+        const resultado = await api(`/clientes/${estado.clienteDetalhe.cliente.id}/parcelas/${item.parcela_id}/pagamento`, {
+          method: 'POST',
+          body: { valor, forma },
+        });
+        mostrarToast('Parcela paga com sucesso!');
+        exibirComprovanteRecebimento(resultado);
+        carregarDetalheCliente(estado.clienteDetalhe.cliente.id);
+      } catch (erro) {
+        document.getElementById('pp-erro').textContent = erro.message;
+      }
+    });
+  }
+
+  // ==========================================================================
+  // Recebimentos (baixa de pagamento do fiado)
+  // ==========================================================================
+  const FORMAS_RECEBIMENTO = {
+    dinheiro: 'Dinheiro',
+    pix: 'PIX',
+    cartao_credito: 'Crédito',
+    cartao_debito: 'Débito',
+  };
+
+  function iniciarRecebimentosView() {
+    estado.clienteRecebimento = null;
+    document.getElementById('receb-busca-cliente').value = '';
+    document.getElementById('receb-resultado-busca').innerHTML = '';
+    document.getElementById('receb-painel-cliente').classList.add('escondido');
+  }
+
+  document.getElementById('receb-busca-cliente').addEventListener('input', async (ev) => {
+    const termo = ev.target.value.trim();
+    const div = document.getElementById('receb-resultado-busca');
+    if (!termo) { div.innerHTML = ''; return; }
+    try {
+      const clientes = await api(`/clientes?busca=${encodeURIComponent(termo)}`);
+      div.innerHTML = clientes.slice(0, 8).map((c) => `
+        <div class="resultado-busca-cliente produto-pdv-item" data-id="${c.id}">
+          <span><b>${c.nome}</b> — ${c.telefone || 'sem telefone'}</span>
+          <span>${c.saldo_devedor > 0 ? `<span class="tag vermelho">${formatarMoeda(c.saldo_devedor)}</span>` : '<span class="tag verde">Sem débitos</span>'}</span>
+        </div>`).join('') || '<span style="color:var(--cor-texto-suave)">Nenhum cliente encontrado.</span>';
+
+      div.querySelectorAll('[data-id]').forEach((elemento) => {
+        elemento.addEventListener('click', () => selecionarClienteRecebimento(Number(elemento.dataset.id)));
+      });
+    } catch (erro) {
+      mostrarToast(erro.message, 'erro');
+    }
+  });
+
+  async function selecionarClienteRecebimento(clienteId) {
+    let cliente, fiado;
+    try {
+      [cliente, fiado] = await Promise.all([
+        api(`/clientes/${clienteId}`),
+        api(`/clientes/${clienteId}/fiado`),
+      ]);
+    } catch (erro) { mostrarToast(erro.message, 'erro'); return; }
+
+    estado.clienteRecebimento = cliente;
+    document.getElementById('receb-resultado-busca').innerHTML = '';
+    document.getElementById('receb-busca-cliente').value = '';
+    document.getElementById('receb-painel-cliente').classList.remove('escondido');
+    document.getElementById('receb-nome-cliente').textContent = cliente.nome;
+    document.getElementById('receb-saldo-devedor').textContent = formatarMoeda(fiado.saldo_devedor);
+    document.getElementById('receb-limite-credito').textContent = formatarMoeda(fiado.limite_credito);
+
+    document.getElementById('receb-tabela-vendas-fiado').innerHTML = fiado.vendas.map((v) => `
+      <tr>
+        <td>#${v.id}</td>
+        <td>${formatarData(v.data)}</td>
+        <td>${formatarMoeda(v.valor_fiado)}</td>
+      </tr>`).join('') || '<tr><td colspan="3" style="color:var(--cor-texto-suave)">Nenhuma compra no fiado.</td></tr>';
+
+    document.getElementById('receb-valor').value = '';
+    document.getElementById('receb-erro').textContent = '';
+  }
+
+  document.getElementById('form-recebimento').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const erroEl = document.getElementById('receb-erro');
+    erroEl.textContent = '';
+
+    const cliente = estado.clienteRecebimento;
+    if (!cliente) return;
+
+    const valor = Number(document.getElementById('receb-valor').value);
+    const forma = document.getElementById('receb-forma').value;
+    if (!valor || valor <= 0) {
+      erroEl.textContent = 'Informe um valor de recebimento válido.';
+      return;
+    }
+
+    try {
+      const resultado = await api(`/clientes/${cliente.id}/pagamento`, { method: 'POST', body: { valor, forma } });
+      mostrarToast('Recebimento confirmado!');
+      exibirComprovanteRecebimento(resultado);
+      selecionarClienteRecebimento(cliente.id);
+    } catch (erro) {
+      erroEl.textContent = erro.message;
+    }
+  });
+
+  function exibirComprovanteRecebimento(recebimento) {
+    const dataFormatada = formatarDataHora(recebimento.data);
+    const temSaldoRegistrado = recebimento.saldo_anterior != null && recebimento.novo_saldo_devedor != null;
+
+    abrirModal(`
+      <button class="modal-fechar" onclick="document.getElementById('overlay-modal').classList.remove('ativo')">✕</button>
+      <div class="imprimivel">
+        <div class="centro titulo">Estoque</div>
+        <div class="centro">Comprovante de recebimento</div>
+        <hr/>
+        <div>Data: ${dataFormatada}</div>
+        <div>Cliente: ${recebimento.cliente_nome || '—'}</div>
+        <div>Forma: ${FORMAS_RECEBIMENTO[recebimento.forma] || recebimento.forma || '—'}</div>
+        <hr/>
+        ${temSaldoRegistrado ? `<div class="linha"><span>Saldo anterior</span><span>${formatarMoeda(recebimento.saldo_anterior)}</span></div>` : ''}
+        <div class="linha titulo"><span>Valor recebido</span><span>${formatarMoeda(recebimento.valor_pago)}</span></div>
+        ${temSaldoRegistrado ? `<div class="linha"><span>Saldo atual</span><span>${formatarMoeda(recebimento.novo_saldo_devedor)}</span></div>` : '<div class="centro" style="font-size:11px;">(saldo indisponível para pagamentos antigos)</div>'}
+        <div class="assinatura">Assinatura do cliente</div>
+      </div>
+      <button class="btn btn-full" style="margin-top:16px;" onclick="window.print()">Imprimir comprovante (58mm)</button>
+    `);
+  }
+
+  // ==========================================================================
+  // Vendas
+  // ==========================================================================
+  async function carregarVendasView() {
+    let vendas;
+    try {
+      vendas = await api('/vendas');
+    } catch (erro) { mostrarToast(erro.message, 'erro'); return; }
+
+    const corpo = document.getElementById('tabela-vendas');
+    corpo.innerHTML = vendas.map((v) => `
+      <tr>
+        <td>#${v.id}</td>
+        <td>${formatarDataHora(v.data)}</td>
+        <td>${v.cliente_nome || '—'}</td>
+        <td>${v.usuario_nome || '—'}</td>
+        <td>${formatarMoeda(v.total)}</td>
+        <td>${v.status === 'cancelada' ? '<span class="tag vermelho">Cancelada</span>' : '<span class="tag verde">Concluída</span>'}</td>
+        <td style="text-align:right;">
+          <button class="btn btn-sm btn-secundario" data-ver="${v.id}">Ver / imprimir</button>
+          ${estado.usuario.role === 'admin' && v.status !== 'cancelada' ? `<button class="btn btn-sm btn-perigo" data-cancelar="${v.id}">Cancelar</button>` : ''}
+        </td>
+      </tr>`).join('') || '<tr><td colspan="7" style="color:var(--cor-texto-suave)">Nenhuma venda registrada.</td></tr>';
+
+    corpo.querySelectorAll('[data-ver]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        try {
+          const venda = await api(`/vendas/${btn.dataset.ver}`);
+          exibirCupom(venda);
+        } catch (erro) { mostrarToast(erro.message, 'erro'); }
+      });
+    });
+    corpo.querySelectorAll('[data-cancelar]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Cancelar esta venda? O estoque e o fiado (se houver) serão restaurados.')) return;
+        try {
+          await api(`/vendas/${btn.dataset.cancelar}`, { method: 'DELETE' });
+          mostrarToast('Venda cancelada e estoque restaurado.');
+          carregarVendasView();
+        } catch (erro) { mostrarToast(erro.message, 'erro'); }
+      });
+    });
+  }
+
+  // ==========================================================================
+  // Usuários (admin)
+  // ==========================================================================
+  async function carregarUsuariosView() {
+    let usuarios;
+    try {
+      usuarios = await api('/auth/usuarios');
+    } catch (erro) { mostrarToast(erro.message, 'erro'); return; }
+
+    document.getElementById('tabela-usuarios').innerHTML = usuarios.map((u) => `
+      <tr><td>${u.nome}</td><td>${u.email}</td><td>${u.role === 'admin' ? 'Administrador' : 'Vendedor(a)'}</td></tr>
+    `).join('');
+  }
+
+  document.getElementById('btn-novo-usuario').addEventListener('click', () => {
+    abrirModal(`
+      <button class="modal-fechar" onclick="document.getElementById('overlay-modal').classList.remove('ativo')">✕</button>
+      <h3>Novo usuário</h3>
+      <form id="form-usuario">
+        <div class="campo"><label>Nome</label><input required id="uf-nome" /></div>
+        <div class="campo"><label>Email</label><input type="email" required id="uf-email" /></div>
+        <div class="campo"><label>Senha</label><input type="password" required id="uf-senha" /></div>
+        <div class="campo">
+          <label>Papel</label>
+          <select id="uf-role"><option value="vendedor">Vendedor(a)</option><option value="admin">Administrador</option></select>
+        </div>
+        <div class="erro-msg" id="uf-erro"></div>
+        <button class="btn btn-full" type="submit">Criar usuário</button>
+      </form>
+    `);
+    document.getElementById('form-usuario').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const corpo = {
+        nome: document.getElementById('uf-nome').value.trim(),
+        email: document.getElementById('uf-email').value.trim(),
+        senha: document.getElementById('uf-senha').value,
+        role: document.getElementById('uf-role').value,
+      };
+      try {
+        await api('/auth/usuarios', { method: 'POST', body: corpo });
+        fecharModal();
+        mostrarToast('Usuário criado!');
+        carregarUsuariosView();
+      } catch (erro) {
+        document.getElementById('uf-erro').textContent = erro.message;
+      }
+    });
+  });
+
+  // ==========================================================================
+  // Inicialização
+  // ==========================================================================
+  if (estado.token && estado.usuario) {
+    iniciarApp();
+  }
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch((erro) => console.warn('Falha ao registrar Service Worker:', erro));
+    });
+  }
+})();
+</script>
+</body>
+</html>

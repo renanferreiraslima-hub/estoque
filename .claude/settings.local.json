@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"estoque/frontend\" \"estoque/backend/routes\" \"estoque/backend/services\" && ls -la estoque)",
+      "Bash(npm install *)",
+      "Bash(node --experimental-sqlite -e \"console.log\\('flag accepted'\\)\")",
+      "Bash(rm -f estoque.db estoque.db-*)",
+      "Bash(npm start *)",
+      "Bash(echo \"PID: $!\")",
+      "Read(//tmp/**)",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>console.log\\('saldo:',JSON.parse\\(d\\).saldo_devedor\\)\\)\")",
+      "Bash(curl -s -X POST http://localhost:3000/api/pix/webhook -H \"Content-Type: application/json\" -H \"x-webhook-secret: chave_secreta_para_validar_o_webhook_pix\" -d '{\"txid\":\"cliente-1-abcxyz\",\"valor\":15.5}')",
+      "Bash(curl -s -o /dev/null -w \"index.html: %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"manifest.json: %{http_code}\\\\n\" http://localhost:3000/manifest.json)",
+      "Bash(curl -s -o /dev/null -w \"sw.js: %{http_code}\\\\n\" http://localhost:3000/sw.js)",
+      "Bash(curl -s -o /dev/null -w \"icon.svg: %{http_code}\\\\n\" http://localhost:3000/icon.svg)",
+      "Bash(kill 1526)",
+      "Bash(pkill -f \"node --experimental-sqlite server.js\")",
+      "Bash(rm -f estoque.db estoque.db-shm estoque.db-wal .env)",
+      "Bash(tasklist //FI \"IMAGENAME eq node.exe\")",
+      "Bash(wmic process *)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill //F //PID 12292)",
+      "Read(//c/Users/renan/OneDrive/Área de Trabalho/**)",
+      "Read(//c/Users/renan/**)",
+      "Bash(node -e ' *)",
+      "Bash(rm -f estoque.db estoque.db-shm estoque.db-wal)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\renan\\OneDrive\\Área de Trabalho\\estoque\\estoque"
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp .env.example .env)",
+      "Bash(node -e ' *)",
+      "Bash(sed -i 's/^PORT=3000/PORT=3099/' .env)",
+      "Bash(PORT=3099 npm start)",
+      "Bash(awk '{print $NF}')",
+      "Bash(node --check /tmp/script-extraido.js)",
+      "Bash(node --check /c/Users/renan/AppData/Local/Temp/claude/c--Users-renan-OneDrive--rea-de-Trabalho-estoque/2008bd62-f238-4aac-a111-8d29aa76069e/scratchpad/script-extraido.js)",
+      "Bash(node --check script-extraido.js)",
+      "Bash(rm -f estoque.db estoque.db-shm estoque.db-wal)",
+      "Bash(sed -i 's/^PORT=3000/PORT=3097/' .env)",
+      "Bash(PORT=3097 npm start)",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>console.log\\(JSON.parse\\(d\\).parcelas.map\\(p=>\\({n:p.numero_parcela,status:p.status}\\)\\)\\)\\)\")",
+      "Bash(taskkill //F //PID 5784)",
+      "Bash(rm -rf __TRACKED_VAR__/backend-teste2)",
+      "Bash(node --check script-check.js)",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>console.log\\(JSON.parse\\(d\\).resumo\\)\\)\")",
+      "Bash(taskkill //F //PID 17336)",
+      "Bash(rm -rf __TRACKED_VAR__/full-teste2 __TRACKED_VAR__/script-check.js)",
+      "Bash(npm ls *)",
+      "Bash(node -e \"require.resolve\\('jsdom'\\)\")",
+      "Bash(node -e \"console.log\\(require\\('jsdom/package.json'\\).version\\)\")",
+      "Bash(node teste-dom.js)",
+      "Bash(taskkill //F //PID 15460)",
+      "Bash(rm -rf __TRACKED_VAR__/full-teste-redesign __TRACKED_VAR__/script-check.js __TRACKED_VAR__/teste-dom.js __TRACKED_VAR__/node_modules __TRACKED_VAR__/package.json __TRACKED_VAR__/package-lock.json)",
+      "Bash(node --check check-deploy.js)",
+      "Bash(rm -f check-deploy.js)",
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"404.html: %{http_code}\\\\n\" http://localhost:3000/404.html)",
+      "Bash(curl -s -o /dev/null -w \"render.yaml \\(nao deve ser servido, mas nao deve quebrar nada\\): %{http_code}\\\\n\" http://localhost:3000/backend/render.yaml)"
+    ]
+  }
+}
