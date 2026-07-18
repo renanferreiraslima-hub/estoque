@@ -77,7 +77,7 @@ app.use((erro, req, res, next) => {
   res.status(500).json({ erro: 'Erro interno do servidor.' });
 });
 
-app.listen(PORTA, () => {
-  console.log(`Servidor Estoque rodando em http://localhost:${PORTA}`);
+app.listen(PORTA, '0.0.0.0', () => {
+  console.log(`Servidor Estoque rodando na porta ${PORTA}`);
   iniciarCronJobs();
 });
