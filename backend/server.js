@@ -19,12 +19,22 @@ const app = express();
 const PORTA = process.env.PORT || 3000;
 
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:5500',
-    'http://127.0.0.1:5500',
-    'https://renanferreiraslima-hub.github.io'
-  ],
+  origin: function (origin, callback) {
+    // Permite requisicoes sem origin (ex: Postman, curl)
+    if (!origin) return callback(null, true);
+
+    // Permite localhost em qualquer porta
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
+    }
+
+    // Permite qualquer subdominio do github.io
+    if (origin.includes('github.io')) {
+      return callback(null, true);
+    }
+
+    callback(new Error('Origem nao permitida pelo CORS'));
+  },
   credentials: true
 }));
 app.use(express.json());
