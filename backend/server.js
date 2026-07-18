@@ -16,6 +16,8 @@ const { processarWebhookPix } = require('./services/pix');
 const { iniciarCronJobs } = require('./services/cobranca');
 
 const app = express();
+console.log('PORT env:', process.env.PORT);
+
 const PORTA = process.env.PORT || 3000;
 
 app.use(cors({
